@@ -79,6 +79,7 @@ function Invoke-DreamSkinStartupFixture {
   function Test-DreamSkinPathEqual { param([string]$Left, [string]$Right); return $true }
   function Stop-DreamSkinRecordedInjector { param([object]$State); return $true }
   function Set-DreamSkinPaused { param([bool]$Paused, [string]$StateRoot); return $true }
+  function Invoke-DreamSkinCodexWindowActivation { param([object]$Codex); return $true }
   function ConvertTo-DreamSkinProcessArgument { param([string]$Value); return $Value }
   function Get-DreamSkinProcessStartedAt { param([int]$ProcessId); return '2026-07-25T00:00:00.0000000Z' }
   function Write-DreamSkinState { param([string]$Path, [object]$State) }
@@ -104,6 +105,9 @@ function Invoke-DreamSkinStartupFixture {
   function Invoke-DreamSkinNative {
     param([string]$FilePath, [object[]]$ArgumentList, [switch]$DiscardStderr)
     if ($ArgumentList -contains '--verify') {
+      return [pscustomobject]@{ ExitCode = 2; Output = @($script:verifyPayload) }
+    }
+    if ($ArgumentList -contains '--once') {
       return [pscustomobject]@{ ExitCode = 2; Output = @($script:verifyPayload) }
     }
     if ($ArgumentList -contains '--remove') {
@@ -169,7 +173,7 @@ function Invoke-DreamSkinStartupFixture {
 # The exact renderer output from #267: theme installed and painted, every
 # readiness signal true except the native-window probe.
 $renderedPayload = @'
-{"installed":true,"version":"1.5.6","stylePresent":true,"homePresent":true,
+{"installed":true,"version":"1.5.11","stylePresent":true,"homePresent":true,
 "nativeWindow":{"pass":false,"bound":false,"reason":"target-window-unavailable"},
 "documentVisibility":"visible","documentHidden":false,
 "viewport":{"width":1289,"height":829},
