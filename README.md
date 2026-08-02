@@ -11,8 +11,8 @@
 加入粉色细描边、柔和外光晕、透明标题栏、白色装饰题字，以及黑猫 `lulu · 音悦生` 角标。
 
 <p align="center">
-  <img src="output/verification/zeyin-melody-home-white-quote-v15.png" alt="泽音 Melody · 樽前月下主题实机效果" width="900"><br>
-  <sub>Windows Codex 桌面端实机效果 · 新建任务首页</sub>
+  <img src="docs/images/presets/zeyin-melody-v7-home.png" alt="泽音 Melody v7 · 樽前月下主题实机效果" width="900"><br>
+  <sub>Windows Codex 桌面端实机效果 · v7 新建任务首页</sub>
 </p>
 
 ### 使用方法
