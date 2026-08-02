@@ -31,7 +31,8 @@
     "--dream-skin-focus-x", "--dream-skin-focus-y", "--dream-skin-art-position",
     "--dream-skin-name", "--dream-skin-tagline", "--dream-skin-project-prefix",
     "--dream-skin-project-label", "--dream-skin-brand-subtitle", "--dream-skin-status",
-    "--dream-skin-quote", "--dream-skin-art",
+    "--dream-skin-quote", "--dream-skin-art", "--dream-skin-project-icon",
+    "--dream-skin-project-icon-indent",
     "--ds-theme-color-background", "--ds-theme-color-panel",
     "--ds-theme-color-panel-alt", "--ds-theme-color-accent",
     "--ds-theme-color-accent-alt", "--ds-theme-color-secondary",
@@ -96,6 +97,9 @@
     for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
     return URL.createObjectURL(new Blob([bytes], { type: mime }));
   })();
+  const projectIconDataUrl = typeof THEME.projectIconDataUrl === "string"
+    && /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(THEME.projectIconDataUrl)
+    ? THEME.projectIconDataUrl : "";
 
   const cssString = (value) => JSON.stringify(String(value ?? ""));
 
@@ -318,6 +322,9 @@
     setStyleProperty(root, "--dream-skin-status", cssString(THEME.statusText || "DREAM SKIN ONLINE"));
     setStyleProperty(root, "--dream-skin-project-prefix", cssString(THEME.projectPrefix || "选择项目 · "));
     setStyleProperty(root, "--dream-skin-project-label", cssString(THEME.projectLabel || "◉  选择项目"));
+    setStyleProperty(root, "--dream-skin-project-icon", projectIconDataUrl
+      ? `url("${projectIconDataUrl}")` : "none");
+    setStyleProperty(root, "--dream-skin-project-icon-indent", projectIconDataUrl ? "28px" : "0px");
   };
 
   const applyArtMetadata = (root) => {

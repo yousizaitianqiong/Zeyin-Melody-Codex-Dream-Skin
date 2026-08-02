@@ -554,6 +554,32 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_SHELL_MAIN__ > __DREAM_SELECTOR_
   backdrop-filter: blur(14px) saturate(108%) !important;
 }
 
+/* 首页固定标题栏必须让插画连续延伸到窗口顶部；新版首页不一定保留
+   home-banners，因此使用稳定的首页路由锚点统一覆盖默认面板层。 */
+html[data-dream-skin="active"] __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)
+  > __DREAM_SELECTOR_HEADER_TINT__ {
+  background: transparent !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Codex 26.727+ 可能重命名外壳/标题栏类名，并将原生应用菜单移出 main；
+   保持首页透明规则对这类更新有韧性，同时让任务路由继续使用深色标题栏。 */
+html[data-dream-skin="active"]:has([role="main"] [data-testid="home-icon"])
+  :is(
+    main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+      > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"]),
+    [class~="group/application-menu-top-bar"],
+    [data-app-shell-top-bar],
+    [class*="_ApplicationMenuTopBar_"]
+  ) {
+  background: transparent !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Decorative chrome lives on the native shell; no injected positioning host is needed. */
 html[data-dream-skin="active"]
   __DREAM_SELECTOR_SHELL_MAIN__:not(:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)) > __DREAM_SELECTOR_HEADER_TINT__::before {
@@ -701,6 +727,32 @@ html[data-dream-skin="active"][data-dream-art-wide="false"]
   background-position: center, var(--ds-art-position) !important;
   background-size: 100% 100%, cover !important;
   background-repeat: no-repeat !important;
+}
+
+/* Codex 26.727+ 的新版主表面不再使用 main.main-surface；只在首页路由下
+   给新版主表面补同一层方图插画，任务页不继承这条规则。 */
+html[data-dream-skin="active"][data-dream-art-wide="false"]:has([role="main"] [data-testid="home-icon"])
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) {
+  background-color: var(--ds-bg) !important;
+  background-image:
+    linear-gradient(90deg,
+      rgb(var(--ds-bg-rgb) / .62) 0%,
+      rgb(var(--ds-bg-rgb) / .28) 56%,
+      rgb(var(--ds-bg-rgb) / .10) 100%),
+    var(--dream-skin-art) !important;
+  background-position: center, var(--ds-art-position) !important;
+  background-size: 100% 100%, cover !important;
+  background-repeat: no-repeat !important;
+}
+
+html[data-dream-skin="active"][data-dream-art-wide="false"]:has([role="main"] [data-testid="home-icon"])
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+  [class*="_MainContentTopFade_"],
+html[data-dream-skin="active"][data-dream-art-wide="false"]:has([role="main"] [data-testid="home-icon"])
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+  [class*="app-shell-main-content-top-fade"] {
+  background: transparent !important;
+  opacity: 0 !important;
 }
 
 /* 新版首页的固定标题栏覆盖在主表面插画之上。方图回退模式下将其透明化，
@@ -949,10 +1001,15 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_HO
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_COMPOSER_CHROME__ {
   overflow: visible !important;
-  border: 1px solid rgb(var(--ds-muted-rgb) / .18) !important;
+  border: 1px solid rgb(var(--ds-highlight-rgb) / .42) !important;
   border-radius: 22px !important;
-  background: rgb(var(--ds-panel-rgb) / .94) !important;
-  box-shadow: 0 10px 28px rgb(var(--ds-bg-rgb) / .24) !important;
+  background: rgb(var(--ds-panel-2-rgb) / .96) !important;
+  background: color-mix(in srgb,
+    rgb(var(--ds-panel-2-rgb)) 70%,
+    rgb(var(--ds-highlight-rgb)) 30%) !important;
+  box-shadow:
+    0 10px 28px rgb(var(--ds-bg-rgb) / .28),
+    0 0 20px rgb(var(--ds-highlight-rgb) / .12) !important;
   backdrop-filter: blur(16px) saturate(108%) !important;
 }
 
@@ -1072,12 +1129,30 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_UTILITY__ {
   margin-inline: 0 !important;
   padding-inline: 18px !important;
   border-radius: 22px 22px 0 0 !important;
-  background: rgb(var(--ds-panel-rgb) / .94) !important;
+  background-color: rgb(var(--ds-panel-2-rgb) / .96) !important;
+  background-color: color-mix(in srgb,
+    rgb(var(--ds-panel-2-rgb)) 70%,
+    rgb(var(--ds-highlight-rgb)) 30%) !important;
+  background: rgb(var(--ds-panel-2-rgb) / .96) !important;
+  background: color-mix(in srgb,
+    rgb(var(--ds-panel-2-rgb)) 70%,
+    rgb(var(--ds-highlight-rgb)) 30%) !important;
   box-shadow:
-    inset 1px 0 rgb(var(--ds-muted-rgb) / .18),
-    inset -1px 0 rgb(var(--ds-muted-rgb) / .18),
-    inset 0 1px rgb(var(--ds-muted-rgb) / .18) !important;
+    inset 1px 0 rgb(var(--ds-highlight-rgb) / .26),
+    inset -1px 0 rgb(var(--ds-highlight-rgb) / .26),
+    inset 0 1px rgb(var(--ds-highlight-rgb) / .26) !important;
   backdrop-filter: blur(16px) saturate(108%) !important;
+}
+
+/* Codex 26.727 给首页工具条附加了 sidebar/fog token 类名；提高选择器特异度，
+   确保黑猫角标所在的上层面板不会被原生深紫背景盖回去。 */
+html[data-dream-skin="active"][data-dream-art-wide="false"]
+  __DREAM_SELECTOR_HOME_UTILITY__[class*="bg-token-side-bar-background"] {
+  background-color: rgb(var(--ds-panel-2-rgb) / .96) !important;
+  background-color: color-mix(in srgb,
+    rgb(var(--ds-panel-2-rgb)) 70%,
+    rgb(var(--ds-highlight-rgb)) 30%) !important;
+  background-image: none !important;
 }
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__:has(__DREAM_SELECTOR_HOME_UTILITY__)
@@ -1236,7 +1311,9 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ div:has(> .horizont
   padding-top: 28px !important;
   border: 1px solid rgb(var(--ds-muted-rgb) / .16);
   border-bottom: 0;
-  background: rgb(var(--ds-panel-rgb) / .92) !important;
+  background: color-mix(in srgb,
+    rgb(var(--ds-panel-2-rgb)) 70%,
+    rgb(var(--ds-highlight-rgb)) 30%) !important;
 }
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ div:has(> .horizontal-scroll-fade-mask __DREAM_SELECTOR_PROJECT_SELECTOR__)::before {
@@ -1245,11 +1322,20 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ div:has(> .horizont
   left: 13px;
   top: 6px;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-left: var(--dream-skin-project-icon-indent, 0px);
   color: var(--ds-muted);
   font-size: 12px;
   font-weight: 720;
   letter-spacing: 0;
+  line-height: 24px;
   white-space: nowrap;
+  background-image: var(--dream-skin-project-icon, none);
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
 }
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_PROJECT_SELECTOR__ > button {

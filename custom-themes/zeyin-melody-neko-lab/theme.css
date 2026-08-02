@@ -14,6 +14,19 @@
   backdrop-filter: none;
 }
 
+[data-ds-part="project-list"] {
+  border-color: rgba(241, 127, 159, .28);
+  border-radius: 14px;
+  box-shadow: 0 0 16px rgba(241, 127, 159, .10);
+  transition-duration: 160ms;
+  transition-property: border-color, box-shadow;
+}
+
+[data-ds-part="project-list"]:hover {
+  border-color: rgba(255, 212, 223, .42);
+  box-shadow: 0 0 18px rgba(241, 127, 159, .16);
+}
+
 [data-ds-part="message"] {
   border-color: rgba(255, 212, 223, .16);
   border-radius: 18px;
@@ -23,6 +36,14 @@
   background-color: rgba(110, 93, 118, .96);
   border-color: rgba(255, 212, 223, .52);
   border-radius: 20px;
+  box-shadow: 0 0 18px rgba(241, 127, 159, .14);
+  transition-duration: 160ms;
+  transition-property: border-color, box-shadow;
+}
+
+[data-ds-part="composer"]:hover {
+  border-color: rgba(255, 212, 223, .44);
+  box-shadow: 0 0 18px rgba(241, 127, 159, .14);
 }
 
 [data-ds-part="dialog"] {

@@ -1,6 +1,7 @@
 **/.DS_Store
 *.log
 *.tmp
+__pycache__/
 .DS_Store
 .idea/
 .vscode/
@@ -24,3 +25,12 @@ TASK_PROGRESS.md
 修复记录*.md
 docs/architecture-cdp-and-cross-platform-grok45.md
 docs/unified-skin-runtime-plan.md
+
+# 泽音 Melody 本地回归中间件与含私人侧栏内容的过渡截图
+output/verification/*package-check/
+output/verification/zeyin-melody-neko-lab-v6-package-validator/
+output/verification/zeyin-melody-lulu-lab-final-check/
+output/verification/zeyin-melody-lulu-header-check/
+output/verification/zeyin-melody-lulu-lab-v2-header-check/
+output/verification/zeyin-melody-neko-lab-v5-header-check/
+output/verification/zeyin-melody-neko-*.png
