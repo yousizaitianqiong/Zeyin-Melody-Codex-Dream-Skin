@@ -32,6 +32,21 @@ assert.equal(
   '[data-settings-panel-slug="general-settings"]',
   "The Settings contract must use the stable Codex 26.727 general-settings panel marker.",
 );
+assert.equal(selectorFor("composer-root"), "[data-codex-composer-root]");
+assert.equal(
+  selectorFor("composer-chrome"),
+  "[data-codex-composer-root] [data-composer-surface-variant]",
+  "Codex 26.803 composer surfaces must use the stable semantic data contract.",
+);
+assert.equal(selectorFor("composer-chrome-legacy"), ".composer-surface-chrome");
+assert.equal(
+  selectorFor("composer-toolbar"),
+  "[data-codex-composer-root] [data-composer-footer-responsive]",
+);
+assert.equal(
+  selectorFor("composer-toolbar-legacy"),
+  '.composer-surface-chrome [class*="_footer_"]',
+);
 const resultFor = (baseState, hits, overlay = false) => gradeDoctorResult(contract, {
   baseState,
   overlay,

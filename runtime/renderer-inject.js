@@ -576,9 +576,12 @@
   const selectorNodes = (key) => queryAll(selectorByKey.get(key)?.selector);
   const genericNodes = (selector) => queryAll(selector)
     .filter((node) => node && typeof node.setAttribute === "function");
+  const excludedComposerOwner =
+    '[role="dialog"], [aria-modal="true"], [data-codex-approval-surface], ' +
+    '[data-codex-composer-request-navigation]';
   const genericInputNodes = () => genericNodes(
     'textarea, [contenteditable="true"], [role="textbox"]',
-  ).filter((node) => !node.closest?.('[role="dialog"], [aria-modal="true"]'));
+  ).filter((node) => !node.closest?.(excludedComposerOwner));
   const resolvedMainNode = () => {
     const exact = selectorNodes("shell-main")[0];
     if (exact) return exact;
@@ -604,19 +607,47 @@
         || node.parentElement === mainParent.parentElement);
     return candidate ? [candidate] : [];
   };
-  const fallbackComposerNodes = () => selectorNodes("composer-chrome").length
-    ? [] : (() => {
-      const main = resolvedMainNode();
-      for (const input of genericInputNodes()) {
-        if (main && !main.contains?.(input)) continue;
-        const owner = input.closest?.(
-          '[data-testid*="composer" i], [data-testid*="prompt" i], ' +
-          '[class*="composer" i], [class*="prompt" i]',
-        );
-        if (owner && (!main || main.contains?.(owner))) return [owner];
+  const validComposerNode = (node) => {
+    if (!node || node.closest?.(excludedComposerOwner)) return false;
+    const main = resolvedMainNode();
+    return !main || main.contains?.(node);
+  };
+  const fallbackComposerNodes = () => {
+    const main = resolvedMainNode();
+    for (const input of genericInputNodes()) {
+      if (main && !main.contains?.(input)) continue;
+
+      // Codex 26.803 exposes a stable semantic root and surface. Prefer the
+      // visual surface, never the editable descendant or responsive footer.
+      const semanticRoot = input.closest?.('[data-codex-composer-root]');
+      if (semanticRoot && (!main || main.contains?.(semanticRoot))) {
+        const closestSurface = input.closest?.('[data-composer-surface-variant]');
+        const surface = closestSurface && semanticRoot.contains?.(closestSurface)
+          ? closestSurface
+          : semanticRoot.querySelector?.('[data-composer-surface-variant]');
+        if (validComposerNode(surface)) return [surface];
       }
-      return [];
-    })();
+
+      // Historical fallback for shells that predate the stable data contract.
+      const owner = input.closest?.(
+        '[data-testid*="composer" i], [data-testid*="prompt" i], ' +
+        '[class*="composer" i], [class*="prompt" i]',
+      );
+      if (validComposerNode(owner)) return [owner];
+    }
+    return [];
+  };
+  const resolvedComposerNodes = () => {
+    const modern = selectorNodes("composer-chrome").filter(validComposerNode);
+    if (modern.length) return modern;
+    const legacy = selectorNodes("composer-chrome-legacy").filter(validComposerNode);
+    return legacy.length ? legacy : fallbackComposerNodes();
+  };
+  const resolvedComposerToolbarNodes = () => {
+    const modern = selectorNodes("composer-toolbar").filter(validComposerNode);
+    if (modern.length) return modern;
+    return selectorNodes("composer-toolbar-legacy").filter(validComposerNode);
+  };
   const addPart = (desired, part, nodes) => {
     for (const node of nodes) {
       if (node && typeof node.setAttribute === "function" && !desired.has(node)) {
@@ -637,8 +668,8 @@
     addPart(desired, "project-list", selectorNodes("project-selector"));
     addPart(desired, "thread", selectorNodes("thread-surface"));
     addPart(desired, "message", selectorNodes("message"));
-    addPart(desired, "composer", [...selectorNodes("composer-chrome"), ...fallbackComposerNodes()]);
-    addPart(desired, "composer-toolbar", selectorNodes("composer-toolbar"));
+    addPart(desired, "composer", resolvedComposerNodes());
+    addPart(desired, "composer-toolbar", resolvedComposerToolbarNodes());
     addPart(desired, "dialog", selectorNodes("overlay-dialog"));
     const homeHero = selectorNodes("game-source")[0] ??
       selectorNodes("home-icon")[0]?.parentElement;

@@ -86,7 +86,7 @@ test("matches the public glass-filter contract used by approved themes", () => {
   }
 });
 
-test("compiles validated declarations into the controlled community cascade layer", () => {
+test("compiles validated declarations into the controlled community layer and native composer bridge", () => {
   const source = `[data-ds-part="sidebar"] {
   background-color: var(--ds-theme-color-panel);
   border-radius: 12px;
@@ -94,7 +94,12 @@ test("compiles validated declarations into the controlled community cascade laye
 [data-ds-part="composer"]:focus-visible {
   border-color: #abcdef;
 }`;
-  const expected = `@layer dreamskin-community {
+  const expected = `@layer theme {
+  [data-ds-part="composer"]:focus-visible {
+    border-color: #abcdef !important;
+  }
+}
+@layer dreamskin-community {
   [data-ds-part="sidebar"] {
     background-color: var(--ds-theme-color-panel) !important;
     background-image: none !important;
@@ -111,6 +116,31 @@ test("compiles validated declarations into the controlled community cascade laye
     assert.equal(decoded.source, source);
     assert.equal(decoded.runtimeSource, expected);
     assert.equal(decoded.validation.status, "validated");
+  }
+});
+
+test("bridges only validated composer border longhands across the native important layer", () => {
+  const source = `[data-ds-part="composer"] {
+  background-color: #112233;
+  border-color: #abcdef;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 14px;
+  box-shadow: 0 0 8px #abcdef;
+}`;
+  for (const validator of validators) {
+    const runtime = validator.compileSafeCss(source);
+    const [nativeBridge, communityLayer] = runtime.split("@layer dreamskin-community");
+    assert.match(nativeBridge, /^@layer theme \{/);
+    assert.match(nativeBridge, /border-color: #abcdef !important;/);
+    assert.match(nativeBridge, /border-width: 2px !important;/);
+    assert.match(nativeBridge, /border-style: solid !important;/);
+    assert.doesNotMatch(nativeBridge, /background-color:/);
+    assert.doesNotMatch(nativeBridge, /border-radius:/);
+    assert.doesNotMatch(nativeBridge, /box-shadow:/);
+    assert.match(communityLayer, /background-color: #112233 !important;/);
+    assert.match(communityLayer, /border-radius: 14px !important;/);
+    assert.match(communityLayer, /box-shadow: 0 0 8px #abcdef !important;/);
   }
 });
 

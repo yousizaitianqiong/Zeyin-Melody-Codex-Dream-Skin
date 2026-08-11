@@ -75,6 +75,11 @@ const STYLE_PROPERTIES = new Set([
   "border-bottom-style",
   "border-left-style",
 ]);
+const COMPOSER_NATIVE_BORDER_PROPERTIES = new Set([
+  ...[...COLOR_PROPERTIES].filter((property) => property.startsWith("border-")),
+  ...WIDTH_PROPERTIES,
+  ...STYLE_PROPERTIES,
+]);
 const RADIUS_PROPERTIES = new Set([
   "border-radius",
   "border-top-left-radius",
@@ -521,6 +526,7 @@ function validationResult(parsed) {
 
 function compileRuntimeCss(parsed) {
   const compiledRules = [];
+  const composerNativeBridgeRules = [];
   for (const { selector: selectorRecord, declarations } of parsed.rules) {
     const { part, selector } = selectorRecord;
     const runtimeDeclarations = [];
@@ -537,6 +543,17 @@ function compileRuntimeCss(parsed) {
       .map(({ property, value }) => `    ${property}: ${value} !important;`)
       .join("\n");
     compiledRules.push(`  ${selector} {\n${body}\n  }`);
+
+    if (part === "composer") {
+      const nativeBorderDeclarations = declarations.filter(({ property }) =>
+        COMPOSER_NATIVE_BORDER_PROPERTIES.has(property));
+      if (nativeBorderDeclarations.length > 0) {
+        const nativeBorderBody = nativeBorderDeclarations
+          .map(({ property, value }) => `    ${property}: ${value} !important;`)
+          .join("\n");
+        composerNativeBridgeRules.push(`  ${selector} {\n${nativeBorderBody}\n  }`);
+      }
+    }
 
     if (part === "root") {
       const bodyDeclarations = [];
@@ -564,7 +581,10 @@ function compileRuntimeCss(parsed) {
     }
   }
   const rules = compiledRules.join("\n");
-  return `@layer ${RUNTIME_CASCADE_LAYER} {\n${rules}\n}\n`;
+  const composerNativeBridge = composerNativeBridgeRules.length > 0
+    ? `@layer theme {\n${composerNativeBridgeRules.join("\n")}\n}\n`
+    : "";
+  return `${composerNativeBridge}@layer ${RUNTIME_CASCADE_LAYER} {\n${rules}\n}\n`;
 }
 
 export function validateSafeCss(source, options = {}) {

@@ -1,5 +1,45 @@
 # Task Progress
 
+## 首页引用文字右侧跨压与层级修复（2026-08-11）
+
+- [完成] Codex 26.803+ 首页 composer 根节点使用 `isolation: isolate`，原生直接子层固定为 `z-index: 1`，引用文字保持 `z-index: 3`；进入输入表面的字形不再被 composer 表面覆盖，原生 overflow 未被运行时规则改写。
+- [完成] 文字右端改为 `right: clamp(52px, 4vw, 64px)`，保留约 7px 定位基准跨压、现有字体、颜色、阴影、`-3deg` 旋转和 `pointer-events: none`；旧版位置与响应式隐藏规则不变。
+- [验证] 双平台资源同步、macOS/Windows renderer、JavaScript 语法、差异格式与完整 Windows 事务套件通过；完整套件耗时 235.6 秒，故障注入分支均按预期 fail closed 后汇总 PASS。
+- [实机] Codex 26.803.10989.0 在 1708×1020、1313×820 下的右侧留白分别为 64px、52.53px，定位基准进入表面均为 7.000px；项目、权限、模型、听写和语音控件零相交，截图确认占位文字仍位于左侧且整行引用文字完整可见。
+- [像素验收] 对显示/隐藏引用文字的同尺寸截图进行输入表面内部差分，1708×1020 与 1313×820 分别检测到 1542、1539 个强差异像素，确认跨压字形实际绘制在输入表面之上，而非仅有正确的几何或 `z-index` 声明。
+- [安装] 本机受管 engine 已原子更新并保持 1.5.12；安装 CSS 与 Windows 生成资源一致，staging/backup 均为 0。活动主题、已保存主题、图片和 `.codex/config.toml` 的安装前后及最终指纹一致；托盘、state 与单实例 watcher 均已恢复并互相匹配。
+- [边界] 不修改活动主题、背景图、`theme.json`、Safe CSS、版本号、官方 Codex 文件或 GitHub PR。
+
+## 首页引用文字跨压输入框优化（2026-08-10）
+
+- [完成] 现代首页 `SING THROUGH THE STORM` 使用 `bottom: calc(100% - 50px)` 与 `z-index: 3` 轻度跨压输入表面上边框；保留既有水平位置、近白色、双层阴影、600 字重和 `pointer-events: none`。
+- [验证] 双平台资源同步检查、macOS/Windows renderer 回归、JavaScript 语法检查和完整 Windows 事务套件通过；旧版位置与宽度/高度响应式隐藏规则保持不变。
+- [实机] Codex 26.803.5235.0 在 1708×1020 与 1313×820 两种布局中均识别现代首页 composer，文字定位基准进入输入表面 `7.000px`；CDP 绘制盒与项目、权限、模型、语音等全部可操作控件零相交，截图确认不覆盖占位文字和底部工具栏。
+- [安装] 本机受管 engine 已原子更新并保持 1.5.12；安装 CSS 与 Windows 生成资源哈希一致，staging/backup 均为 0。活动主题、已保存主题与图片的安装前后逐树指纹一致，托盘已恢复。
+- [当前会话限制] 当前多窗口 Codex 会话仍将主 renderer 报告为 `document.hidden`，因此未绕过严格检查创建 watcher/state；当前页面已一次性应用样式，完全退出 Codex 并从 `Codex Dream Skin` 快捷方式重启后才能恢复跨导航持久 watcher。
+- [本机状态说明] 安装事务前后 `.codex/config.toml` 指纹一致；实机验收结束后 Codex 自身于 01:11 原子重写了该文件，未由主题安装器写入，故没有用旧快照覆盖应用的较新配置。活动主题 ID 与引用文案仍分别为 `local-zeyin-melody-neko-lab-5`、`SING THROUGH THE STORM`。
+- [边界] 旧版首页位置、背景图、活动主题 `theme.json`、Safe CSS、版本号和官方 Codex 文件均不修改，不创建或更新 GitHub PR。
+
+## 首页引用文字对比度优化（2026-08-10）
+
+- [完成] 现代首页引用文字改为 `right: clamp(120px, 10vw, 160px)` 与 `bottom: calc(100% + 16px)`，使用主题正文色、深色轮廓、强调色柔光和 600 字重；旧版首页只同步可读性样式并保留原位置。
+- [验证] 双平台资源同步、JavaScript 语法、macOS/Windows renderer 静态断言和完整 Windows 事务套件通过；响应式隐藏、非交互装饰层、位置、颜色、双层阴影与旧版回退均有断言。
+- [安装] 受管 engine 已原子更新为 1.5.12，源码与安装后的 CSS 哈希一致且无 staging/backup 残留；活动主题、已保存主题、图片和 `.codex/config.toml` 的安装前后逐树指纹一致，托盘已恢复。
+- [实机] Codex 26.803.5235.0 首页计算样式确认引用文字为 `rgba(255, 247, 251, .94)`、双层阴影、600 字重和 `pointer-events: none`；1313px 宽窗口实际右偏移 131.33px，文字位于整个 composer 根节点上方且不与项目栏、输入框或按钮相交。当前背景采样的低位对比度估算约 9.5:1，本地截图未提交。
+- [当前会话限制] 标准 watcher 启动最终仍因多窗口 Codex 会话把主 renderer 报告为 `document.hidden` 而 fail closed；页面结构、主题 ID、CSS 版本和截图均已实机确认，但未伪造 state 或绕过可见性断言。当前页面已一次性应用新样式，托盘已恢复；需在用户读完结果后完全退出 Codex，再从 `Codex Dream Skin` 快捷方式启动，才能恢复跨导航持久 watcher。
+- [边界] 不创建或更新 GitHub PR，不提交 ZIP 或验收截图，不修改 WindowsApps、`app.asar` 或官方 Codex 文件。
+
+## Codex 26.803 composer 兼容修复（2026-08-09）
+
+- [范围] 仅修复本地共享运行时、双平台生成资源与 Windows 安装引擎；活动主题 local-zeyin-melody-neko-lab-5、背景图片和 Safe CSS 原样保留，不创建或更新 GitHub PR。
+- [已复现] Codex 26.803.5235.0 已移除主输入框的 composer-surface-chrome，改用 data-codex-composer-root、data-composer-surface-variant 与 data-composer-footer-responsive；v1.5.11 因此把 footer 错当成 composer，真实表面未获得公开部件。
+- [完成] 新版语义表面/footer 优先公开为 composer/composer-toolbar，旧类保留回退；新版首页停用旧宽度拉伸、项目栏拼接和结构路径规则，引用文字锚定到首页 composer 根节点上方。搜索框、弹窗、审批卡片和 request-navigation 均保持隔离。
+- [完成] 普通对话页原生 components 层的 `border: 0 !important` 由通用桥接恢复细边框；Safe CSS 编译器只把已经获准的 composer 边框长属性桥接到 theme 层，未新增或放宽 Safe CSS 属性、选择器与包格式，泽音主题源文件未修改。
+- [验证] 双平台资源同步检查、JavaScript 语法、选择器/renderer/Safe CSS 回归和完整 Windows 测试套件均通过；完整套件覆盖安装、ZIP 导入、主题事务、回滚、就绪失败与已渲染保留场景。
+- [安装] 受管运行时已原子更新到 1.5.12；源码与安装后的 CSS/验证器哈希一致，活动主题、主题库、图片和 `.codex/config.toml` 的安装前后指纹一致，托盘和 watcher 均已恢复。
+- [实机] Codex 26.803.5235.0 首页与普通对话页均公开新版 composer。普通页保持 736px 原生宽度，常态为泽音紫色表面、粉色细边与粉色光晕，悬停色/光晕由未修改的 Safe CSS 切换；首页项目控件与输入表面保持 5px 原生间距，引用文字位于整个根节点上方 12px 且不相交，输入、权限、模型、语音、发送与项目控件可用。
+- [边界] 未修改 WindowsApps、`app.asar` 或官方 Codex 文件；验收截图仅保存在本机临时目录，未提交 ZIP/截图，也未创建或更新 GitHub PR。
+
 ## 泽音 Melody 本地升级到上游 v1.5.11（2026-08-01）
 
 - [完成] 在原泽音 Melody 分支 `codex/zeyin-melody-theme` 上核对当前安装状态；安装引擎为 `1.5.6`，活动主题和已保存主题均已纳入本机备份。
@@ -7,7 +47,9 @@
 - [完成] 在独立升级 worktree 中把上游 `v1.5.7` 至 `v1.5.11` 累计更新合并到泽音 Melody 定制；冲突文件保留上游新版 app-shell 选择器，同时保留主题的首页/任务页视觉规则，并重新生成双端运行时资产。
 - [验证] `node tools/sync-runtime-assets.mjs --check`、选择器与 renderer 回归、Windows Node 回归 `19/19`、Windows PowerShell 全量事务套件（运行时安装、主题导入、注入器、窗口就绪、配置恢复）均通过。
 - [验证] macOS/Windows/运行时版本均为 `1.5.11`；Windows 测试使用 `RemoteSigned`，未修改官方 WindowsApps、`app.asar` 或签名。
-- [待完成] 将已验证的本地合并节点安装到当前 Codex，安装后复核引擎版本、活动主题和 renderer；如安装或验证失败，按清单恢复完整安装状态。
+- [完成] 使用项目安装器内部同一套原子运行时替换逻辑把受管 engine 更新到 `1.5.11`；源树与安装引擎 24 个文件逐一哈希一致，staging/backup 临时目录均为 0。
+- [验证] 升级后活动主题、已保存主题、图片、`.codex\config.toml` 和状态文件与升级前基线的 52 项受保护文件逐一一致；Windows 回退事务套件通过。
+- [受当前会话限制] 当前 Codex 进程没有监听 9335 回环 CDP 端点，验证器按 fail-closed 返回；下次正常重启 Codex 后需再运行 `verify-dream-skin.ps1` 完成 renderer 实机验收，当前未强制关闭会话。
 
 ## Client release v1.5.11 — preparing (2026-08-01)
 
@@ -808,3 +850,21 @@ Updated: 2026-07-31 14:29 HKT (Asia/Hong_Kong)
   `git diff --check`, and a second real-DOM read-only cardinality check pass.
   No installed runtime, Codex process, active theme, PR, issue, commit, or push
   was changed by this focused task.
+
+## 工作区全仓库代码审查（2026-07-31）
+
+- [进行中] 审查工作区根仓库、当前 `Codex-Dream-Skin` 仓库及“重装备份”中的旧版仓库。
+- [进行中] 覆盖安装/启动/恢复、主题 ZIP 与 Safe CSS、安全边界、CDP、跨平台一致性、CI/发布、测试与文档契约。
+- [待完成] 运行适用的 Windows、Node.js、同步与静态检查，并记录 macOS 本机不可执行部分。
+- [待完成] 在工作区根目录生成带文件与行号证据、风险分级和整改建议的中文 Markdown 评审报告。
+- [约束] 保留现有未提交修改与未跟踪诊断资料；除本进度条目和最终评审报告外不修改项目文件。
+
+## Windows 1.5.11 升级续接（2026-08-01）
+
+- [完成] 复核当前工作区、历史备份、安装目录、日志、临时资料、Git 状态与版本信息；确认原有旧版备份不是当前完整安装快照。
+- [完成] 保留原有 `20260801-205134-当前安装状态` 快照，并为已经更新到 1.5.11 的当前安装状态创建 `20260801-212730-当前安装状态-v1.5.11` 新快照；两份均未覆盖，后一份完成 83/83 文件、字节数与 SHA-256 校验，`.codex/config.toml` 哈希一致。
+- [完成] 抓取并审查上游 v1.5.9、v1.5.10、v1.5.11；重点处理 Codex 26.721/26.727 的窗口就绪、CDP、持久化恢复、设置页标记、Safe CSS、主题导入与运行时资源同步变化。
+- [完成] 在隔离工作树合并上游 v1.5.11，保留泽音 Melody 主题；修复平台 CSS 生成同步和 Windows 自定义回归断言，隔离合并提交为 `2470491`，再将排除本文件的等价补丁安全回迁当前工作树。
+- [验证] 隔离工作树完整 Windows 回归通过；回迁后 runtime 同步检查、差异检查、EngineOnly 检查与 Windows 运行时 24 文件逐文件哈希比对通过。完整回归中的 cleanup 警告来自主动故障注入场景。
+- [已知状态] 当前官方 Codex 为 26.727.6591.0；已安装 Dream Skin 引擎为 1.5.11 且与当前工作树 Windows 运行时字节一致，但 `state.json` 仍记录旧的 26.721.11231.0，9335 端口没有活跃注入会话。
+- [待后续] 安装脚本要求关闭当前 Codex 后才会刷新 state.json 并启动新的 Dream Skin 会话；本次会话运行在该 Codex 进程中，因此未强制关闭应用、未绕过安装器保护，也未修改 WindowsApps 内容。

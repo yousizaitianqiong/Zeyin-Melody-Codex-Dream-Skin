@@ -1195,15 +1195,12 @@ try {
   }
   $quietTaskComposerPattern =
     '(?s)\[data-dream-task-mode="off"\].*?' + $modernMainSurfacePattern + '\s+' +
-    '\.composer-surface-chrome\s*\{[^}]*border-width:\s*1px !important;' +
+    '\[data-ds-part="composer"\]\s*\{[^}]*border-width:\s*1px !important;' +
     '[^}]*border-style:\s*solid !important;' +
-    '[^}]*border-color:\s*rgb\(var\(--ds-accent-rgb\) / \.72\) !important;' +
-    '[^}]*border-radius:\s*22px !important;' +
-    '[^}]*background:\s*rgb\(var\(--ds-panel-2-rgb\)\) !important;' +
-    '[^}]*box-shadow:\s*0 0 18px rgb\(var\(--ds-accent-rgb\) / \.26\) !important;' +
+    '[^}]*border-color:\s*rgb\(var\(--ds-muted-rgb\) / \.18\) !important;' +
     '[^}]*backdrop-filter:\s*none !important;'
   if (-not [regex]::IsMatch($css, $quietTaskComposerPattern)) {
-    throw 'Task mode off no longer replaces the dark composer edge with theme colors.'
+    throw 'Task mode off no longer restores the native composer edge for Safe CSS theming.'
   }
   $quietTaskComposerBackdropPattern =
     '(?s)\[data-dream-task-mode="off"\].*?' + $modernMainSurfacePattern + '\s+div\.sticky\.bottom-0 \[class\*="bg-gradient-to-t"\]' +

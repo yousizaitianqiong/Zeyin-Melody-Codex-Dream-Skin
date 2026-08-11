@@ -1,17 +1,18 @@
 {
   "schema": "codex-dream-skin-selectors/1",
-  "description": "双端统一选择器契约。scope 与 required 来自双端 DOM 快照实测；shell-main 与 header-tint 另由 2026-07-31 Codex 26.727.40816 真实 macOS renderer 复核。doctor / CI 应逐条 querySelector 并按 tier 判级：L1 缺失=皮肤主行为受损，L2 缺失=精修静默降级。",
+  "description": "双端统一选择器契约。scope 与 required 来自双端 DOM 快照实测；shell-main 与 header-tint 由 2026-07-31 Codex 26.727.40816 真实 macOS renderer 复核，composer 语义锚点由 2026-08-09 Codex 26.803.5235.0 真实 Windows renderer 复核。doctor / CI 应逐条 querySelector 并按 tier 判级：L1 缺失=皮肤主行为受损，L2 缺失=精修静默降级。",
   "verifiedAgainst": {
-    "date": "2026-07-31",
-    "chromium": "150.0.7871.124（双端快照）；150.0.7871.182（macOS 真实 renderer 复核）",
+    "date": "2026-08-09",
+    "chromium": "150.0.7871.124（双端历史快照）；150.0.7871.182（macOS 真实 renderer 复核）；151.0.7922.76（Windows 真实 renderer 复核）",
     "codexVersionMac": "26.715.61943（历史快照）；26.727.40816（真实 renderer 复核）",
-    "codexVersionWindows": "版本号未记录；bundle hash 与 mac 不同（ModelPickerTrigger mac=1fm6a win=1w4ob），确认存在版本错位",
+    "codexVersionWindows": "26.803.5235.0（真实 renderer 复核）；composer 根节点、表面与 footer 均提供稳定 data 属性",
     "fixtures": [
       "runtime/dom-fixtures/codex-dom-fixture-darwin-watch.json (15 状态)",
       "runtime/dom-fixtures/codex-dom-fixture-win32-watch.json (7 状态)",
-      "Codex 26.727.40816 signed macOS app, live app:// renderer"
+      "Codex 26.727.40816 signed macOS app, live app:// renderer",
+      "Codex 26.803.5235.0 Store Windows app, live app:// renderer"
     ],
-    "verdict": "双端运行时继续共用一份 selector/CSS 合同。26.727.40816 将主表面和顶栏的旧语义类改为 CSS Modules，同时提供稳定 app-shell data 属性；合同保留旧类并优先增加稳定属性。Windows 26.727 仍需真实 renderer 验收。"
+    "verdict": "双端运行时继续共用一份 selector/CSS 合同。26.727.40816 将主表面和顶栏的旧语义类改为 CSS Modules，同时提供稳定 app-shell data 属性；26.803.5235.0 又用 data-codex-composer-root、data-composer-surface-variant 与 data-composer-footer-responsive 取代主 composer 的旧类。合同优先使用稳定语义属性，并保留旧 composer 类作为历史回退。"
   },
   "appearanceSignal": {
     "dark": "html.electron-dark",
@@ -35,8 +36,11 @@
     { "key": "home-route", "selector": "[role=\"main\"]:has([data-testid=\"home-icon\"])", "tier": "L1", "scope": "home", "required": true, "notes": "首页容器。实测 [role=main] 仅存在于首页——它不是通用路由锚点，thread 页没有" },
     { "key": "home-route-css", "selector": "[role=\"main\"]", "tier": "L1", "scope": "home", "required": true, "notes": "home-route 的 CSS 可组合别名：不含 :has()。CSS 禁止 :has() 嵌套，home-route 原选择器一旦写进 :has()/:not(:has()) 整条规则会被解析器丢弃（v1.3.1 全窗口首页与任务页氛围背景因此失效）。依据与 home-route 相同的实测：[role=main] 仅存在于首页；该锚点缺失时 CSS 路由门控整体失效，故必须按 L1 必需项监控" },
     { "key": "home-banners", "selector": ".home-banners", "tier": "L2", "scope": "home", "required": false, "notes": "Codex 26.721+ 新增的原生首页 banner 插槽，位于 home-route 第一个子节点内、通常为空（0 子节点）靠原生 empty:hidden 折叠。真正的首页内容（标题/建议卡/输入框）在这个版本上已变成该插槽外层容器的兄弟节点，不再是它的后代（见 #244 实测：home-route > div:first-child 被撑到 100% 高度会把内容挤出视口）。用于判定新旧 home DOM 形态，皮肤据此把 first-child 链路的强制尺寸限定在旧形态或改走兄弟节点" },
-    { "key": "composer-chrome", "selector": ".composer-surface-chrome", "tier": "L2", "scope": "home+thread", "required": false, "notes": "输入框壳。win 实测存在无 composer 的 detail 路由，不可当全局锚点" },
-    { "key": "composer-toolbar", "selector": ".composer-surface-chrome [class*=\"_footer_\"]", "tier": "L2", "scope": "home+thread", "required": false, "notes": "输入框工具栏；CSS Modules 名称跨端稳定，hash 随版本变化" },
+    { "key": "composer-root", "selector": "[data-codex-composer-root]", "tier": "L2", "scope": "home+thread", "required": false, "notes": "Codex 26.803+ composer 语义根节点；data-composer-placement 区分 home/thread。审批卡片和搜索表单不提供此属性" },
+    { "key": "composer-chrome", "selector": "[data-codex-composer-root] [data-composer-surface-variant]", "tier": "L2", "scope": "home+thread", "required": false, "notes": "Codex 26.803+ 输入表面。运行时优先把该节点公开为 data-ds-part=composer；win 实测存在无 composer 的 detail 路由，不可当全局锚点" },
+    { "key": "composer-chrome-legacy", "selector": ".composer-surface-chrome", "tier": "L2", "scope": "home+thread", "required": false, "notes": "Codex 26.727 及更早版本的输入框壳，仅在新版语义表面不存在时回退" },
+    { "key": "composer-toolbar", "selector": "[data-codex-composer-root] [data-composer-footer-responsive]", "tier": "L2", "scope": "home+thread", "required": false, "notes": "Codex 26.803+ 输入框工具栏语义锚点" },
+    { "key": "composer-toolbar-legacy", "selector": ".composer-surface-chrome [class*=\"_footer_\"]", "tier": "L2", "scope": "home+thread", "required": false, "notes": "旧版输入框工具栏回退；CSS Modules hash 不得写死" },
     { "key": "home-utility", "selector": "[class*=\"_homeUtilityBar_\"]", "tier": "L2", "scope": "home", "required": false, "notes": "CSS Modules 前缀匹配；模块名跨端稳定、hash 随版本变，禁止匹配完整 hash" },
     { "key": "game-source", "selector": "[data-feature=\"game-source\"]", "tier": "L2", "scope": "home", "required": false },
     { "key": "home-suggestions", "selector": ".group\\/home-suggestions", "tier": "L2", "scope": "home", "required": false },

@@ -12,7 +12,7 @@ const startPath = path.resolve(here, "../scripts/start-dream-skin.ps1");
 const selectors = {
   shell: 'main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])',
   sidebar: "aside.app-shell-left-panel",
-  composer: ".composer-surface-chrome",
+  composer: '[data-ds-part="composer"]',
   homeIcon: '[data-testid="home-icon"]',
   home: '[role="main"]:has([data-testid="home-icon"])',
   gameSource: '[data-feature="game-source"]',
@@ -111,12 +111,11 @@ function makeDomFixture({
     querySelector(selector) {
       if (selector === selectors.shell) return shell;
       if (selector === selectors.sidebar) return sidebar;
-      if (selector === selectors.composer) return composer;
+      if (selector === selectors.composer) return genericInput ?? composer;
       if (selector === selectors.homeIcon) return null;
       if (selector === selectors.home) return home;
       if (selector === selectors.gameSource || selector === selectors.suggestions) return homeSignal;
       if (selector === '[data-ds-part="main"], [data-ds-part="home"]') return genericMain ?? home;
-      if (selector === '[data-ds-part="composer"]') return genericInput;
       if (selector === selectors.settings || selector === selectors.themePreview) return settings;
       return null;
     },
@@ -125,7 +124,7 @@ function makeDomFixture({
   };
   const window = {
     __CODEX_DREAM_SKIN_STATE__: {
-      version: "1.5.11",
+      version: "1.5.12",
       themeId: "fixture-theme",
       revision: "fixture-revision",
       styleMode: "style",

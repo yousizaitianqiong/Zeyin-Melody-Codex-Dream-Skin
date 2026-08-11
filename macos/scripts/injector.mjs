@@ -43,7 +43,7 @@ const stableTestidLiteral = (testid) => {
   }
   return JSON.stringify(`[data-testid="${testid}"]`);
 };
-const SKIN_VERSION = "1.5.11";
+const SKIN_VERSION = "1.5.12";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 10 * 1024 * 1024;
@@ -518,7 +518,7 @@ async function probeSession(session) {
     const markers = {
       shell: Boolean(document.querySelector(${selectorLiteral("shell-main")})),
       sidebar: Boolean(document.querySelector(${selectorLiteral("left-panel")})),
-      composer: Boolean(document.querySelector(${selectorLiteral("composer-chrome")})),
+      composer: Boolean(document.querySelector('[data-ds-part="composer"]')),
       main: Boolean(document.querySelector(${selectorLiteral("home-route")})),
       generic: genericCodexSurface(),
     };
@@ -1150,7 +1150,7 @@ async function verifySession(session, expectedThemeId = null, expectedRevision =
       ?? box(boxableChain[boxableChain.length - 1]);
     const projectButton = box(home?.querySelector(${selectorLiteral("project-selector")} + " > button"));
     const shell = box(document.querySelector(${selectorLiteral("shell-main")}));
-    const composer = box(document.querySelector(${selectorLiteral("composer-chrome")}));
+    const composer = box(document.querySelector('[data-ds-part="composer"]'));
     const sidebar = box(document.querySelector(${selectorLiteral("left-panel")}));
     const genericMain = box(document.querySelector('[data-ds-part="main"], [data-ds-part="home"]'));
     const genericInput = box(document.querySelector('[data-ds-part="composer"]'));
