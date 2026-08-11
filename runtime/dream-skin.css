@@ -1,4 +1,6 @@
 /* Canonical cross-platform skin. Run tools/sync-runtime-assets.mjs after editing. */
+@layer dreamskin-accessibility, dreamskin-community;
+
 :root[data-dream-skin="active"] {
   color-scheme: dark !important;
   --ds-bg: #111318;
@@ -426,7 +428,7 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(__DREAM_SELECTOR_SHELL_MAIN__):not(:has(__DREAM_SELECTOR_SHELL_MAIN__ __DREAM_SELECTOR_HOME_ROUTE_CSS__))
-  __DREAM_SELECTOR_COMPOSER_CHROME__ {
+  [data-ds-part="composer"] {
   background: var(--ds-immersive-composer-solid) !important;
   border: 0 !important;
   box-shadow:
@@ -554,32 +556,6 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_SHELL_MAIN__ > __DREAM_SELECTOR_
   backdrop-filter: blur(14px) saturate(108%) !important;
 }
 
-/* 首页固定标题栏必须让插画连续延伸到窗口顶部；新版首页不一定保留
-   home-banners，因此使用稳定的首页路由锚点统一覆盖默认面板层。 */
-html[data-dream-skin="active"] __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)
-  > __DREAM_SELECTOR_HEADER_TINT__ {
-  background: transparent !important;
-  border-bottom: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
-
-/* Codex 26.727+ 可能重命名外壳/标题栏类名，并将原生应用菜单移出 main；
-   保持首页透明规则对这类更新有韧性，同时让任务路由继续使用深色标题栏。 */
-html[data-dream-skin="active"]:has([role="main"] [data-testid="home-icon"])
-  :is(
-    main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
-      > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"]),
-    [class~="group/application-menu-top-bar"],
-    [data-app-shell-top-bar],
-    [class*="_ApplicationMenuTopBar_"]
-  ) {
-  background: transparent !important;
-  border-bottom: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
-
 /* Decorative chrome lives on the native shell; no injected positioning host is needed. */
 html[data-dream-skin="active"]
   __DREAM_SELECTOR_SHELL_MAIN__:not(:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)) > __DREAM_SELECTOR_HEADER_TINT__::before {
@@ -619,18 +595,56 @@ html[data-dream-skin="active"]
 }
 
 html[data-dream-skin="active"]
-  __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)::after {
+  __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__):not(:has([data-codex-composer-root][data-composer-placement="home"]))::after {
   content: var(--dream-skin-quote, "MAKE SOMETHING WONDERFUL");
   position: absolute;
   right: 28px;
   bottom: 72px;
   z-index: 2;
   pointer-events: none;
-  color: rgb(var(--ds-accent-rgb) / .74);
-  font: italic 14px/1.2 "Segoe Print", "Comic Sans MS", cursive;
+  color: rgb(var(--ds-text-rgb) / .94);
+  font: italic 600 14px/1.2 "Segoe Print", "Comic Sans MS", cursive;
   letter-spacing: 0;
-  text-shadow: 0 0 13px rgb(var(--ds-accent-rgb) / .30);
+  text-shadow:
+    0 1px 3px rgb(var(--ds-bg-rgb) / .92),
+    0 0 12px rgb(var(--ds-accent-rgb) / .42);
   transform: rotate(-3deg);
+}
+
+/* Codex 26.803+ 保留原生分离的项目栏与 composer。首页根节点建立独立
+   层叠上下文，让右侧装饰文字稳定跨压输入表面，同时不改变原生 overflow。 */
+html[data-dream-skin="active"]
+  [data-codex-composer-root][data-composer-placement="home"] {
+  position: relative;
+  isolation: isolate;
+}
+
+html[data-dream-skin="active"]
+  [data-codex-composer-root][data-composer-placement="home"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-dream-skin="active"]
+  [data-codex-composer-root][data-composer-placement="home"]::after {
+  content: var(--dream-skin-quote, "MAKE SOMETHING WONDERFUL");
+  position: absolute;
+  right: clamp(52px, 4vw, 64px);
+  bottom: calc(100% - 50px);
+  z-index: 3;
+  max-width: min(42vw, 520px);
+  overflow: hidden;
+  pointer-events: none;
+  color: rgb(var(--ds-text-rgb) / .94);
+  font: italic 600 14px/1.2 "Segoe Print", "Comic Sans MS", cursive;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-shadow:
+    0 1px 3px rgb(var(--ds-bg-rgb) / .92),
+    0 0 12px rgb(var(--ds-accent-rgb) / .42);
+  white-space: nowrap;
+  transform: rotate(-3deg);
+  transform-origin: right bottom;
 }
 
 html[data-dream-skin="active"][data-dream-shell="light"]
@@ -661,17 +675,20 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_SHELL_MAIN__ [role="main"] {
   scrollbar-color: rgb(var(--ds-accent-rgb) / .38) transparent;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) {
   --thread-content-max-width: min(1180px, calc(100cqw - 44px)) !important;
   overflow-x: hidden !important;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child {
   min-height: 100% !important;
   padding-top: 15px !important;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child {
   flex: 0 0 440px !important;
   min-height: 440px !important;
   align-items: flex-start !important;
@@ -686,19 +703,19 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child >
    (see #244). Override with higher specificity only when that new slot is
    present, so pre-26.721 layouts are untouched. */
 html[data-dream-skin="active"]
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child:has(> __DREAM_SELECTOR_HOME_BANNERS__) {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child:has(> __DREAM_SELECTOR_HOME_BANNERS__) {
   min-height: 0 !important;
   padding-top: 0 !important;
 }
 
 html[data-dream-skin="active"]
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child:has(> __DREAM_SELECTOR_HOME_BANNERS__) > __DREAM_SELECTOR_HOME_BANNERS__ {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child:has(> __DREAM_SELECTOR_HOME_BANNERS__) > __DREAM_SELECTOR_HOME_BANNERS__ {
   flex: 0 1 auto !important;
   min-height: 0 !important;
 }
 
 html[data-dream-skin="active"]
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child:has(> __DREAM_SELECTOR_HOME_BANNERS__) > __DREAM_SELECTOR_HOME_BANNERS__ > div:first-child {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child:has(> __DREAM_SELECTOR_HOME_BANNERS__) > __DREAM_SELECTOR_HOME_BANNERS__ > div:first-child {
   height: auto !important;
   min-height: 0 !important;
   border: 0 !important;
@@ -708,7 +725,7 @@ html[data-dream-skin="active"]
 }
 
 html[data-dream-skin="active"]
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child:has(> __DREAM_SELECTOR_HOME_BANNERS__) > __DREAM_SELECTOR_HOME_BANNERS__ > div:first-child::before {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child:has(> __DREAM_SELECTOR_HOME_BANNERS__) > __DREAM_SELECTOR_HOME_BANNERS__ > div:first-child::before {
   content: none !important;
 }
 
@@ -729,32 +746,6 @@ html[data-dream-skin="active"][data-dream-art-wide="false"]
   background-repeat: no-repeat !important;
 }
 
-/* Codex 26.727+ 的新版主表面不再使用 main.main-surface；只在首页路由下
-   给新版主表面补同一层方图插画，任务页不继承这条规则。 */
-html[data-dream-skin="active"][data-dream-art-wide="false"]:has([role="main"] [data-testid="home-icon"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) {
-  background-color: var(--ds-bg) !important;
-  background-image:
-    linear-gradient(90deg,
-      rgb(var(--ds-bg-rgb) / .62) 0%,
-      rgb(var(--ds-bg-rgb) / .28) 56%,
-      rgb(var(--ds-bg-rgb) / .10) 100%),
-    var(--dream-skin-art) !important;
-  background-position: center, var(--ds-art-position) !important;
-  background-size: 100% 100%, cover !important;
-  background-repeat: no-repeat !important;
-}
-
-html[data-dream-skin="active"][data-dream-art-wide="false"]:has([role="main"] [data-testid="home-icon"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
-  [class*="_MainContentTopFade_"],
-html[data-dream-skin="active"][data-dream-art-wide="false"]:has([role="main"] [data-testid="home-icon"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
-  [class*="app-shell-main-content-top-fade"] {
-  background: transparent !important;
-  opacity: 0 !important;
-}
-
 /* 新版首页的固定标题栏覆盖在主表面插画之上。方图回退模式下将其透明化，
    让背景从窗口内容区顶部连续显示，避免形成深色横带。 */
 html[data-dream-skin="active"][data-dream-art-wide="false"]
@@ -768,7 +759,7 @@ html[data-dream-skin="active"][data-dream-art-wide="false"]
 
 html[data-dream-skin="active"][data-dream-art-wide="false"]
   __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__ __DREAM_SELECTOR_HOME_BANNERS__)
-  [class~="app-shell-main-content-top-fade"] {
+  __DREAM_SELECTOR_MAIN_CONTENT_TOP_FADE__ {
   background: transparent !important;
   opacity: 0 !important;
 }
@@ -788,7 +779,8 @@ html[data-dream-skin="active"][data-dream-art-wide="false"]
    is dormant rather than misrendered. Left as-is pending a real fixture of
    the new nested shape; the critical content-invisible bug is the block
    above this one. */
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child {
   position: relative !important;
   isolation: isolate;
   width: calc(100% - 44px) !important;
@@ -808,7 +800,8 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child >
   box-shadow: 0 16px 38px rgb(var(--ds-bg-rgb) / .30) !important;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child::before {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
@@ -820,25 +813,26 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child >
 }
 
 html[data-dream-skin="active"]:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child::before {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child::before {
   inset: 0 0 0 auto;
 }
 
 html[data-dream-skin="active"]:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child::before {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child::before {
   inset: 0 14%;
   width: auto;
   border-radius: 0;
 }
 
 html[data-dream-skin="active"]:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"])
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child::before {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child::before {
   inset: 0;
   width: auto;
   border-radius: 21px;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:first-child {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:first-child {
   position: relative;
   z-index: 1;
   height: 100%;
@@ -848,29 +842,30 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child >
 }
 
 html[data-dream-skin="active"]:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:first-child {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:first-child {
   justify-content: flex-end !important;
 }
 
 html[data-dream-skin="active"]:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:first-child {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:first-child {
   justify-content: center !important;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(46%, 520px) !important;
   align-items: flex-start !important;
   gap: 0 !important;
 }
 
 html[data-dream-skin="active"]:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
   align-items: flex-end !important;
   text-align: right !important;
 }
 
 html[data-dream-skin="active"]:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(58%, 640px) !important;
   align-items: center !important;
   text-align: center !important;
@@ -931,7 +926,8 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_GA
   opacity: .86;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
   left: 14px !important;
   right: 14px !important;
   top: 100% !important;
@@ -999,21 +995,108 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_HO
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_HOME_SUGGESTIONS__ button > span:first-child { justify-content: center !important; }
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_HOME_SUGGESTIONS__ button > span:last-child { align-items: center !important; text-align: center !important; }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_COMPOSER_CHROME__ {
-  overflow: visible !important;
-  border: 1px solid rgb(var(--ds-highlight-rgb) / .42) !important;
+html[data-dream-skin="active"] [data-ds-part="composer"] {
+  border: 1px solid rgb(var(--ds-muted-rgb) / .18) !important;
   border-radius: 22px !important;
-  background: rgb(var(--ds-panel-2-rgb) / .96) !important;
-  background: color-mix(in srgb,
-    rgb(var(--ds-panel-2-rgb)) 70%,
-    rgb(var(--ds-highlight-rgb)) 30%) !important;
-  box-shadow:
-    0 10px 28px rgb(var(--ds-bg-rgb) / .28),
-    0 0 20px rgb(var(--ds-highlight-rgb) / .12) !important;
+  background: rgb(var(--ds-panel-rgb) / .94) !important;
+  box-shadow: 0 10px 28px rgb(var(--ds-bg-rgb) / .24) !important;
   backdrop-filter: blur(16px) saturate(108%) !important;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_COMPOSER_CHROME__::before { content: none !important; }
+/* Legacy shells need overflow/pseudo cleanup from the former chrome class.
+   The 26.803 semantic surface keeps Codex's native overflow and structure. */
+html[data-dream-skin="active"] [data-ds-part="composer"]:not([data-composer-surface-variant]) {
+  overflow: visible !important;
+}
+
+html[data-dream-skin="active"]
+  [data-ds-part="composer"]:not([data-composer-surface-variant])::before { content: none !important; }
+
+/* Newer app shells may no longer expose the selector contract above. The
+   renderer assigns these parts only from one coherent main/composer/sidebar
+   structure; keep the minimum background and transparency contract functional
+   before a new exact selector contract is available. */
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="sidebar"] {
+  background:
+    linear-gradient(180deg,
+      rgb(var(--ds-panel-rgb) / .98),
+      rgb(var(--ds-bg-rgb) / .96)) !important;
+  border: 1px solid var(--ds-line) !important;
+  color: var(--ds-text) !important;
+  box-shadow: 10px 0 30px rgb(var(--ds-bg-rgb) / .22) !important;
+  backdrop-filter: none !important;
+}
+
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="main"],
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  :not(:has([data-ds-part="main"])) > [data-ds-part="home"] {
+  position: relative !important;
+  isolation: isolate;
+  overflow: hidden !important;
+  background: var(--ds-bg) !important;
+  color: var(--ds-text) !important;
+  border: 1px solid var(--ds-line) !important;
+  box-shadow: -8px 0 28px rgb(var(--ds-bg-rgb) / .18) !important;
+}
+
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="main"]::before,
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  :not(:has([data-ds-part="main"])) > [data-ds-part="home"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--ds-task-fade), var(--ds-task-shade), var(--dream-skin-art);
+  background-repeat: no-repeat;
+  background-position: center, center, var(--ds-art-position);
+  background-size: 100% 100%, 100% 100%, cover;
+  opacity: .78;
+}
+
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="main"] > *,
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  :not(:has([data-ds-part="main"])) > [data-ds-part="home"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  body:has([data-ds-part="main"], [data-ds-part="home"]) {
+  background-image: var(--dream-skin-art) !important;
+  background-position: var(--ds-art-position) !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  [data-ds-part="sidebar"] {
+  background: linear-gradient(90deg,
+    var(--ds-immersive-sidebar),
+    var(--ds-immersive-edge) 100%) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  [data-ds-part="main"],
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  :not(:has([data-ds-part="main"])) > [data-ds-part="home"] {
+  background: linear-gradient(90deg,
+    var(--ds-immersive-edge),
+    var(--ds-immersive-mid) 64%,
+    var(--ds-immersive-far)) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  [data-ds-part="main"]::before,
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+  :not(:has([data-ds-part="main"])) > [data-ds-part="home"]::before {
+  content: none;
+}
 
 /* A wide image can carry the home screen too. The native hero remains live,
    but the artwork is painted once on the window instead of repeated in a card. */
@@ -1074,7 +1157,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_SHEL
 }
 
 html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -1082,7 +1165,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_SHEL
 }
 
 html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)
-  __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child::before {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child::before {
   content: none !important;
 }
 
@@ -1095,7 +1178,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_SHEL
   backdrop-filter: blur(8px) saturate(104%) !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_COMPOSER_CHROME__ {
+html[data-dream-skin="active"][data-dream-art-wide="true"] [data-ds-part="composer"] {
   background: var(--ds-immersive-composer-solid) !important;
   border: 0 !important;
   box-shadow:
@@ -1106,7 +1189,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_COMP
 }
 
 html[data-dream-skin="active"][data-dream-shell="light"][data-dream-art-wide="true"]
-  __DREAM_SELECTOR_COMPOSER_CHROME__ {
+  [data-ds-part="composer"] {
   box-shadow:
     0 10px 28px rgb(var(--ds-bg-rgb) / .14),
     inset 0 0 0 1px var(--ds-immersive-line),
@@ -1115,48 +1198,32 @@ html[data-dream-skin="active"][data-dream-shell="light"][data-dream-art-wide="tr
 }
 
 html[data-dream-skin="active"][data-dream-shell="light"]
-  __DREAM_SELECTOR_COMPOSER_CHROME__ p.placeholder::after {
+  [data-ds-part="composer"] p.placeholder::after {
   color: rgb(var(--ds-muted-rgb) / .78) !important;
   opacity: 1 !important;
 }
 
-/* Current Codex builds render the home project picker as a separate opaque
-   cap above the composer. Join both native controls into one continuous
-   surface while leaving task and utility-route inputs untouched. */
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_UTILITY__ {
+/* Legacy Codex builds rendered the home project picker as an opaque cap above
+   the composer. Preserve that historical joined treatment only when the
+   26.803 semantic composer root is absent; current builds keep native spacing. */
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) __DREAM_SELECTOR_HOME_UTILITY__ {
   top: 0 !important;
   width: 100% !important;
   margin-inline: 0 !important;
   padding-inline: 18px !important;
   border-radius: 22px 22px 0 0 !important;
-  background-color: rgb(var(--ds-panel-2-rgb) / .96) !important;
-  background-color: color-mix(in srgb,
-    rgb(var(--ds-panel-2-rgb)) 70%,
-    rgb(var(--ds-highlight-rgb)) 30%) !important;
-  background: rgb(var(--ds-panel-2-rgb) / .96) !important;
-  background: color-mix(in srgb,
-    rgb(var(--ds-panel-2-rgb)) 70%,
-    rgb(var(--ds-highlight-rgb)) 30%) !important;
+  background: rgb(var(--ds-panel-rgb) / .94) !important;
   box-shadow:
-    inset 1px 0 rgb(var(--ds-highlight-rgb) / .26),
-    inset -1px 0 rgb(var(--ds-highlight-rgb) / .26),
-    inset 0 1px rgb(var(--ds-highlight-rgb) / .26) !important;
+    inset 1px 0 rgb(var(--ds-muted-rgb) / .18),
+    inset -1px 0 rgb(var(--ds-muted-rgb) / .18),
+    inset 0 1px rgb(var(--ds-muted-rgb) / .18) !important;
   backdrop-filter: blur(16px) saturate(108%) !important;
 }
 
-/* Codex 26.727 给首页工具条附加了 sidebar/fog token 类名；提高选择器特异度，
-   确保黑猫角标所在的上层面板不会被原生深紫背景盖回去。 */
-html[data-dream-skin="active"][data-dream-art-wide="false"]
-  __DREAM_SELECTOR_HOME_UTILITY__[class*="bg-token-side-bar-background"] {
-  background-color: rgb(var(--ds-panel-2-rgb) / .96) !important;
-  background-color: color-mix(in srgb,
-    rgb(var(--ds-panel-2-rgb)) 70%,
-    rgb(var(--ds-highlight-rgb)) 30%) !important;
-  background-image: none !important;
-}
-
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__:has(__DREAM_SELECTOR_HOME_UTILITY__)
-  __DREAM_SELECTOR_COMPOSER_CHROME__ {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])):has(__DREAM_SELECTOR_HOME_UTILITY__)
+  [data-ds-part="composer"] {
   border: 0 !important;
   border-radius: 0 0 22px 22px !important;
   box-shadow:
@@ -1166,7 +1233,8 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__:has(__DREAM_SELECTO
     inset 0 -1px rgb(var(--ds-muted-rgb) / .18) !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_HOME_UTILITY__ {
+html[data-dream-skin="active"][data-dream-art-wide="true"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) __DREAM_SELECTOR_HOME_UTILITY__ {
   background: var(--ds-immersive-composer-solid) !important;
   box-shadow:
     inset 1px 0 var(--ds-immersive-line),
@@ -1176,7 +1244,8 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_HOME
 }
 
 html[data-dream-skin="active"][data-dream-art-wide="true"]
-  __DREAM_SELECTOR_HOME_ROUTE__:has(__DREAM_SELECTOR_HOME_UTILITY__) __DREAM_SELECTOR_COMPOSER_CHROME__ {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])):has(__DREAM_SELECTOR_HOME_UTILITY__)
+  [data-ds-part="composer"] {
   box-shadow:
     0 10px 30px rgb(var(--ds-bg-rgb) / .20),
     inset 1px 0 var(--ds-immersive-line),
@@ -1185,7 +1254,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]
 }
 
 html[data-dream-skin="active"][data-dream-shell="light"][data-dream-art-wide="true"]
-  __DREAM_SELECTOR_HOME_UTILITY__ {
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) __DREAM_SELECTOR_HOME_UTILITY__ {
   box-shadow:
     inset 1px 0 var(--ds-immersive-line),
     inset -1px 0 var(--ds-immersive-line),
@@ -1193,17 +1262,16 @@ html[data-dream-skin="active"][data-dream-shell="light"][data-dream-art-wide="tr
   backdrop-filter: blur(8px) saturate(102%) !important;
 }
 
-/* Codex 原生在 Tailwind utilities 层中用 !important 把输入框边框宽度归零。
-   同层覆写后，主题规则的更高特异性才能真正恢复粉色细描边。 */
-@layer utilities {
+/* Codex 26.803 在普通对话页的 components 层用 border: 0 !important
+   同时锁死宽度、样式和 currentColor。用同层、更具体的通用桥接恢复
+   细边框及中性回退色；验证后的 composer Safe CSS 会把边框长属性同步
+   到优先级更高的 theme 层，因此主题仍控制最终颜色和悬停状态。 */
+@layer components {
   html[data-dream-skin="active"]:is([data-dream-task-mode="off"], [data-dream-art-task-mode="off"])
-    __DREAM_SELECTOR_SHELL_MAIN__:not(:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)) __DREAM_SELECTOR_COMPOSER_CHROME__ {
+    __DREAM_SELECTOR_SHELL_MAIN__:not(:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)) [data-ds-part="composer"] {
     border-width: 1px !important;
     border-style: solid !important;
-    border-color: rgb(var(--ds-accent-rgb) / .72) !important;
-    border-radius: 22px !important;
-    background: rgb(var(--ds-panel-2-rgb)) !important;
-    box-shadow: 0 0 18px rgb(var(--ds-accent-rgb) / .26) !important;
+    border-color: rgb(var(--ds-muted-rgb) / .18) !important;
     backdrop-filter: none !important;
   }
 }
@@ -1232,27 +1300,27 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="off"], [data-dream-art-
 }
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_UTILITY__ button,
-html[data-dream-skin="active"] __DREAM_SELECTOR_COMPOSER_CHROME__ button:not([class~="bg-token-foreground"]) {
+html[data-dream-skin="active"] [data-ds-part="composer"] button:not([class~="bg-token-foreground"]) {
   color: var(--ds-muted) !important;
 }
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_UTILITY__ button svg,
-html[data-dream-skin="active"] __DREAM_SELECTOR_COMPOSER_CHROME__ button svg {
+html[data-dream-skin="active"] [data-ds-part="composer"] button svg {
   color: currentColor !important;
 }
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_UTILITY__ button *,
-html[data-dream-skin="active"] __DREAM_SELECTOR_COMPOSER_CHROME__ button:not([class~="bg-token-foreground"]) * {
+html[data-dream-skin="active"] [data-ds-part="composer"] button:not([class~="bg-token-foreground"]) * {
   color: currentColor !important;
 }
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_UTILITY__ button:hover,
-html[data-dream-skin="active"] __DREAM_SELECTOR_COMPOSER_CHROME__ button:not([class~="bg-token-foreground"]):hover {
+html[data-dream-skin="active"] [data-ds-part="composer"] button:not([class~="bg-token-foreground"]):hover {
   color: var(--ds-text) !important;
   background: rgb(var(--ds-accent-rgb) / .10) !important;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_COMPOSER_CHROME__ p.placeholder::after {
+html[data-dream-skin="active"] [data-ds-part="composer"] p.placeholder::after {
   color: rgb(var(--ds-muted-rgb) / .82) !important;
   opacity: 1 !important;
 }
@@ -1293,7 +1361,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_SHEL
 }
 
 html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_SHELL_MAIN__
-  .app-shell-main-content-top-fade {
+  __DREAM_SELECTOR_MAIN_CONTENT_TOP_FADE__ {
   display: none !important;
   background: transparent !important;
 }
@@ -1306,17 +1374,19 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] __DREAM_SELECTOR_SHEL
   background: transparent !important;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ div:has(> .horizontal-scroll-fade-mask __DREAM_SELECTOR_PROJECT_SELECTOR__) {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root]))
+  div:has(> .horizontal-scroll-fade-mask __DREAM_SELECTOR_PROJECT_SELECTOR__) {
   position: relative;
   padding-top: 28px !important;
   border: 1px solid rgb(var(--ds-muted-rgb) / .16);
   border-bottom: 0;
-  background: color-mix(in srgb,
-    rgb(var(--ds-panel-2-rgb)) 70%,
-    rgb(var(--ds-highlight-rgb)) 30%) !important;
+  background: rgb(var(--ds-panel-rgb) / .92) !important;
 }
 
-html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ div:has(> .horizontal-scroll-fade-mask __DREAM_SELECTOR_PROJECT_SELECTOR__)::before {
+html[data-dream-skin="active"]
+  __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root]))
+  div:has(> .horizontal-scroll-fade-mask __DREAM_SELECTOR_PROJECT_SELECTOR__)::before {
   content: var(--dream-skin-project-label, "选择项目");
   position: absolute;
   left: 13px;
@@ -1357,26 +1427,41 @@ html[data-dream-skin="active"] button[class~="bg-token-foreground"] {
 }
 
 html[data-dream-skin="active"] article,
-html[data-dream-skin="active"] [data-message-author-role] { border-radius: 16px; }
+html[data-dream-skin="active"] [data-ds-part="message"] { border-radius: 16px; }
 
 @media (max-width: 1120px) {
   html[data-dream-skin="active"]
-    __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)::after { content: none; }
-  html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ { --thread-content-max-width: min(940px, calc(100cqw - 30px)) !important; }
-  html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
+    __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__):not(:has([data-codex-composer-root][data-composer-placement="home"]))::after,
+  html[data-dream-skin="active"]
+    [data-codex-composer-root][data-composer-placement="home"]::after { content: none; }
+  html[data-dream-skin="active"]
+    __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) { --thread-content-max-width: min(940px, calc(100cqw - 30px)) !important; }
+  html[data-dream-skin="active"]
+    __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
+}
+
+@media (max-height: 760px) {
+  html[data-dream-skin="active"]
+    __DREAM_SELECTOR_SHELL_MAIN__:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__):not(:has([data-codex-composer-root][data-composer-placement="home"]))::after,
+  html[data-dream-skin="active"]
+    [data-codex-composer-root][data-composer-placement="home"]::after { content: none; }
 }
 
 @media (max-width: 900px) {
-  html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child {
+  html[data-dream-skin="active"]
+    __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child {
     flex-basis: 408px !important;
     min-height: 408px !important;
   }
-  html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child {
+  html[data-dream-skin="active"]
+    __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child {
     height: 232px !important;
     min-height: 232px !important;
   }
-  html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:first-child { padding: 0 26px; }
-  html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  html[data-dream-skin="active"]
+    __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:first-child { padding: 0 26px; }
+  html[data-dream-skin="active"]
+    __DREAM_SELECTOR_HOME_ROUTE__:not(:has([data-codex-composer-root])) > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
     width: min(58%, 460px) !important;
   }
   html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_GAME_SOURCE__ { font-size: 18px !important; }
@@ -1385,13 +1470,15 @@ html[data-dream-skin="active"] [data-message-author-role] { border-radius: 16px;
   html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_HOME_SUGGESTIONS__ button { min-height: 112px !important; font-size: 12px !important; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html[data-dream-skin="active"] *,
-  html[data-dream-skin="active"] *::before,
-  html[data-dream-skin="active"] *::after {
-    scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
+@layer dreamskin-accessibility {
+  @media (prefers-reduced-motion: reduce) {
+    html[data-dream-skin="active"] *,
+    html[data-dream-skin="active"] *::before,
+    html[data-dream-skin="active"] *::after {
+      scroll-behavior: auto !important;
+      transition-duration: .01ms !important;
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+    }
   }
 }

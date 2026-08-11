@@ -581,6 +581,80 @@
     try { return [...document.querySelectorAll(selector)]; } catch { return []; }
   };
   const selectorNodes = (key) => queryAll(selectorByKey.get(key)?.selector);
+  const genericNodes = (selector) => queryAll(selector)
+    .filter((node) => node && typeof node.setAttribute === "function");
+  const excludedComposerOwner =
+    '[role="dialog"], [aria-modal="true"], [data-codex-approval-surface], ' +
+    '[data-codex-composer-request-navigation]';
+  const genericInputNodes = () => genericNodes(
+    'textarea, [contenteditable="true"], [role="textbox"]',
+  ).filter((node) => !node.closest?.(excludedComposerOwner));
+  const resolvedMainNode = () => {
+    const exact = selectorNodes("shell-main")[0];
+    if (exact) return exact;
+    for (const input of genericInputNodes()) {
+      const main = input.closest?.('main, [role="main"]');
+      if (main && typeof main.setAttribute === "function") return main;
+    }
+    return genericNodes('main, [role="main"]')
+      .find((node) => !node.closest?.('[role="dialog"], [aria-modal="true"]')) ?? null;
+  };
+  const fallbackMainNodes = () => selectorNodes("shell-main").length
+    ? [] : [resolvedMainNode()].filter(Boolean);
+  const fallbackSidebarNodes = () => {
+    if (selectorNodes("left-panel").length) return [];
+    const main = resolvedMainNode();
+    const mainParent = main?.parentElement;
+    if (!main || !mainParent) return [];
+    const candidate = genericNodes('aside, nav[aria-label]')
+      .filter((node) => !main.contains?.(node))
+      .filter((node) => !node.closest?.('[role="dialog"], [aria-modal="true"]'))
+      .find((node) => node.parentElement === mainParent
+        || node.parentElement?.parentElement === mainParent
+        || node.parentElement === mainParent.parentElement);
+    return candidate ? [candidate] : [];
+  };
+  const validComposerNode = (node) => {
+    if (!node || node.closest?.(excludedComposerOwner)) return false;
+    const main = resolvedMainNode();
+    return !main || main.contains?.(node);
+  };
+  const fallbackComposerNodes = () => {
+    const main = resolvedMainNode();
+    for (const input of genericInputNodes()) {
+      if (main && !main.contains?.(input)) continue;
+
+      // Codex 26.803 exposes a stable semantic root and surface. Prefer the
+      // visual surface, never the editable descendant or responsive footer.
+      const semanticRoot = input.closest?.('[data-codex-composer-root]');
+      if (semanticRoot && (!main || main.contains?.(semanticRoot))) {
+        const closestSurface = input.closest?.('[data-composer-surface-variant]');
+        const surface = closestSurface && semanticRoot.contains?.(closestSurface)
+          ? closestSurface
+          : semanticRoot.querySelector?.('[data-composer-surface-variant]');
+        if (validComposerNode(surface)) return [surface];
+      }
+
+      // Historical fallback for shells that predate the stable data contract.
+      const owner = input.closest?.(
+        '[data-testid*="composer" i], [data-testid*="prompt" i], ' +
+        '[class*="composer" i], [class*="prompt" i]',
+      );
+      if (validComposerNode(owner)) return [owner];
+    }
+    return [];
+  };
+  const resolvedComposerNodes = () => {
+    const modern = selectorNodes("composer-chrome").filter(validComposerNode);
+    if (modern.length) return modern;
+    const legacy = selectorNodes("composer-chrome-legacy").filter(validComposerNode);
+    return legacy.length ? legacy : fallbackComposerNodes();
+  };
+  const resolvedComposerToolbarNodes = () => {
+    const modern = selectorNodes("composer-toolbar").filter(validComposerNode);
+    if (modern.length) return modern;
+    return selectorNodes("composer-toolbar-legacy").filter(validComposerNode);
+  };
   const addPart = (desired, part, nodes) => {
     for (const node of nodes) {
       if (node && typeof node.setAttribute === "function" && !desired.has(node)) {
@@ -592,17 +666,20 @@
     metrics.partPasses += 1;
     const desired = new Map();
     addPart(desired, "root", [document.documentElement]);
-    addPart(desired, "sidebar", selectorNodes("left-panel"));
-    addPart(desired, "main", selectorNodes("shell-main"));
+    addPart(desired, "sidebar", [...selectorNodes("left-panel"), ...fallbackSidebarNodes()]);
     addPart(desired, "header", selectorNodes("header-tint"));
+    // Route-specific parts win when a generic shell collapses home and main
+    // onto the same element.
     addPart(desired, "home", selectorNodes("home-route"));
+    addPart(desired, "main", [...selectorNodes("shell-main"), ...fallbackMainNodes()]);
     addPart(desired, "project-list", selectorNodes("project-selector"));
     addPart(desired, "thread", selectorNodes("thread-surface"));
     addPart(desired, "message", selectorNodes("message"));
-    addPart(desired, "composer", selectorNodes("composer-chrome"));
-    addPart(desired, "composer-toolbar", selectorNodes("composer-toolbar"));
+    addPart(desired, "composer", resolvedComposerNodes());
+    addPart(desired, "composer-toolbar", resolvedComposerToolbarNodes());
     addPart(desired, "dialog", selectorNodes("overlay-dialog"));
-    const homeHero = selectorNodes("home-icon")[0]?.parentElement;
+    const homeHero = selectorNodes("game-source")[0] ??
+      selectorNodes("home-icon")[0]?.parentElement;
     addPart(desired, "home-hero", homeHero ? [homeHero] : []);
 
     for (const node of partNodes) {
@@ -639,9 +716,10 @@
     const overlay = selectorHit("overlay-menu") || selectorHit("overlay-dialog") ||
       selectorHit("overlay-popper");
     let baseState = "thread";
-    if (selectorHit("appearance-radio") || stableTestidHit("theme-preview")) baseState = "settings";
+    if (selectorHit("settings-panel") || selectorHit("appearance-radio") ||
+      stableTestidHit("theme-preview")) baseState = "settings";
     else if (selectorHit("home-icon") || selectorHit("home-route")) baseState = "home";
-    else if (!selectorHit("shell-main")) baseState = "settings";
+    else if (!selectorHit("shell-main") && !document.querySelector('main, [role="main"]')) baseState = "settings";
     const missingL1 = SELECTOR_CONTRACT.selectors
       .filter((entry) => entry.tier === "L1" && entry.required &&
         scopeMatches(entry.scope, baseState, overlay) && !selectorHit(entry.key))
@@ -740,7 +818,10 @@
   };
   if (typeof MutationObserver === "function") {
     rootObserver = new MutationObserver(() => scheduleEnsure({ root: true }));
-    partObserver = new MutationObserver(() => scheduleEnsure({ parts: true }, 80));
+    // SPA route changes are observable as DOM mutations even when Chromium's
+    // Navigation API emits no event. Keep verification scope and public parts
+    // derived from the same post-mutation tree.
+    partObserver = new MutationObserver(() => scheduleEnsure({ scope: true, parts: true }, 80));
   }
 
   let mediaQuery = null;
@@ -810,7 +891,7 @@
     bodyReadyHandler = () => {
       if (!window[DISABLED_KEY]) {
         observeBody();
-        scheduleEnsure({ parts: true }, 0);
+        scheduleEnsure({ scope: true, parts: true }, 0);
       }
     };
     document.addEventListener("DOMContentLoaded", bodyReadyHandler, { once: true });

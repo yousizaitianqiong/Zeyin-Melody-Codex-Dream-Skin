@@ -43,7 +43,7 @@ const stableTestidLiteral = (testid) => {
   }
   return JSON.stringify(`[data-testid="${testid}"]`);
 };
-const SKIN_VERSION = "1.5.8";
+const SKIN_VERSION = "1.5.12";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 10 * 1024 * 1024;
@@ -233,9 +233,16 @@ export function assessRendererVerification(renderer, nativeWindow, expected) {
   const viewportPass = hasReasonableDimensions(viewportWidth, viewportHeight);
   const documentVisible = result.documentVisibility === "visible";
   const settingsRoute = result.scope?.baseState === "settings";
-  const structurePass = settingsRoute
-    ? Boolean(result.settings?.visible)
-    : Boolean(result.shell?.visible) && Boolean(result.sidebar?.visible);
+  const homeRoute = result.scope?.baseState === "home" || result.homeRoute || result.homePresent;
+  const l1ScopePass = result.scope?.level === "L1" &&
+    Array.isArray(result.scope?.missingL1) && result.scope.missingL1.length === 0;
+  const genericStructurePass = l1ScopePass && Boolean(result.genericMain?.visible) &&
+    (Boolean(result.genericInput?.visible) || Boolean(homeRoute && result.homePresent));
+  const l0StructurePass = result.scope?.level === "L0" &&
+    settingsRoute && Boolean(result.settings?.visible);
+  const structurePass = l0StructurePass || (l1ScopePass && (
+    (Boolean(result.shell?.visible) && Boolean(result.sidebar?.visible)) || genericStructurePass
+  ));
   const nativeWindowPass = nativeWindow?.status === "ready";
   const fallbackWindowPass = nativeWindow?.status === "unsupported";
   const windowPass = documentVisible && viewportPass
@@ -247,9 +254,11 @@ export function assessRendererVerification(renderer, nativeWindow, expected) {
     && (!expected.expectedRevision || result.revision === expected.expectedRevision);
   const visibleSuggestionLabels = Array.isArray(result.suggestionLabels)
     ? result.suggestionLabels.filter((item) => item?.visible) : [];
-  const homePass = !result.homeRoute || (
-    result.homePresent && result.hero?.visible && result.hero.width >= 280
-    && result.hero.height >= 120 && (result.visibleCardCount === 0 || (
+  const homeFallbackVisible = Boolean(homeRoute && result.homePresent && result.genericMain?.visible);
+  const homePass = !homeRoute || (
+    result.homePresent && ((result.hero?.visible && result.hero.width >= 280
+      && result.hero.height >= 120) || homeFallbackVisible)
+    && (result.visibleCardCount === 0 || (
       visibleSuggestionLabels.length >= result.visibleCardCount
       && result.suggestionLabelColorsMatch
     ))
@@ -271,7 +280,7 @@ export function assessRendererVerification(renderer, nativeWindow, expected) {
   result.softNotes = {
     projectButtonOptional: !result.projectButton?.visible,
     composerOptionalOnNonTaskRoutes: !result.composer?.visible,
-    suggestionCardsOptional: result.homeRoute && result.visibleCardCount === 0,
+    suggestionCardsOptional: homeRoute && result.visibleCardCount === 0,
   };
   return result;
 }
@@ -500,21 +509,29 @@ async function listAppTargets(port) {
 
 async function probeSession(session) {
   return session.evaluate(`(() => {
-    const currentMainSurface = document.querySelector('[class*="_MainContentSurface_"]');
-    const currentSidebar = document.querySelector('.app-shell-left-panel');
-    const markers = {
-      shell: Boolean(document.querySelector(${selectorLiteral("shell-main")})) || Boolean(currentMainSurface),
-      sidebar: Boolean(document.querySelector(${selectorLiteral("left-panel")})) || Boolean(currentSidebar),
-      composer: Boolean(document.querySelector(${selectorLiteral("composer-chrome")})),
-      main: Boolean(document.querySelector(${selectorLiteral("home-route")})) ||
-        Boolean(document.querySelector('[role="main"]')),
+    const genericCodexSurface = () => {
+      if (location.protocol !== 'app:') return false;
+      const main = document.querySelector('main, [role="main"]');
+      const input = document.querySelector('textarea, [contenteditable="true"], [role="textbox"]');
+      const branded = Boolean(document.querySelector(
+        ${stableTestidLiteral("app-shell-header-context-menu-surface")},
+      ));
+      return Boolean(main && input && branded);
     };
-    const settings = Boolean(document.querySelector(${selectorLiteral("appearance-radio")})) ||
+    const markers = {
+      shell: Boolean(document.querySelector(${selectorLiteral("shell-main")})),
+      sidebar: Boolean(document.querySelector(${selectorLiteral("left-panel")})),
+      composer: Boolean(document.querySelector('[data-ds-part="composer"]')),
+      main: Boolean(document.querySelector(${selectorLiteral("home-route")})),
+      generic: genericCodexSurface(),
+    };
+    const settings = Boolean(document.querySelector(${selectorLiteral("settings-panel")})) ||
+      Boolean(document.querySelector(${selectorLiteral("appearance-radio")})) ||
       Boolean(document.querySelector(${stableTestidLiteral("theme-preview")}));
     return {
       markers,
       codex: location.protocol === 'app:' &&
-        ((markers.shell && markers.sidebar) || settings || markers.main),
+        ((markers.shell && markers.sidebar) || settings || markers.main || markers.generic),
     };
   })()`);
 }
@@ -626,8 +643,8 @@ async function loadSafeCss(assetsRoot) {
     if (!sameFileStat(before, after) || bytes.length !== after.size) {
       throw new Error("Theme Safe CSS changed while being loaded");
     }
-    const { source, validation } = decodeAndValidateSafeCss(bytes);
-    return { path: cssPath, source, stat: after, validation };
+    const { source, runtimeSource, validation } = decodeAndValidateSafeCss(bytes);
+    return { path: cssPath, runtimeSource, source, stat: after, validation };
   } finally {
     await handle.close();
   }
@@ -774,6 +791,7 @@ export async function loadTheme(themeDir) {
       extension,
       imagePath,
       safeCss: safeCss?.source ?? "",
+      safeCssRuntime: safeCss?.runtimeSource ?? "",
       safeCssPath: safeCss?.path ?? null,
       safeCssStatus: safeCss ? "validated" : "none",
       theme,
@@ -809,8 +827,8 @@ export async function loadPayload(themeDir) {
     loadTheme(themeDir),
   ]);
   const { css, template } = staticAssets;
-  const { art, extension, safeCss, safeCssStatus, theme } = loaded;
-  const combinedCss = safeCss ? `${css}\n${safeCss}\n` : css;
+  const { art, extension, safeCssRuntime, safeCssStatus, theme } = loaded;
+  const combinedCss = safeCssRuntime ? `${css}\n${safeCssRuntime}\n` : css;
   const styleRevision = createHash("sha256").update(combinedCss).digest("hex").slice(0, 20);
   const artMetadata = readImageMetadata(art, extension);
   if (!artMetadata) {
@@ -1162,9 +1180,12 @@ async function verifySession(session, expectedThemeId = null, expectedRevision =
       ?? box(boxableChain[boxableChain.length - 1]);
     const projectButton = box(home?.querySelector(${selectorLiteral("project-selector")} + " > button"));
     const shell = box(document.querySelector(${selectorLiteral("shell-main")}));
-    const composer = box(document.querySelector(${selectorLiteral("composer-chrome")}));
+    const composer = box(document.querySelector('[data-ds-part="composer"]'));
     const sidebar = box(document.querySelector(${selectorLiteral("left-panel")}));
+    const genericMain = box(document.querySelector('[data-ds-part="main"], [data-ds-part="home"]'));
+    const genericInput = box(document.querySelector('[data-ds-part="composer"]'));
     const settingsBoxes = [
+      box(document.querySelector(${selectorLiteral("settings-panel")})),
       box(document.querySelector(${selectorLiteral("appearance-radio")})),
       box(document.querySelector(${stableTestidLiteral("theme-preview")})),
     ];
@@ -1198,6 +1219,8 @@ async function verifySession(session, expectedThemeId = null, expectedRevision =
       shell,
       composer,
       sidebar,
+      genericMain,
+      genericInput,
       settings,
       viewport: { width: innerWidth, height: innerHeight },
       documentOverflow: {
@@ -1415,9 +1438,16 @@ export function earlyPayloadFor(payload, revision) {
       const shell = document.querySelector(${selectorLiteral("shell-main")});
       const sidebar = document.querySelector(${selectorLiteral("left-panel")});
       const main = document.querySelector(${selectorLiteral("home-route")});
-      const settings = document.querySelector(${selectorLiteral("appearance-radio")}) ||
+      const settings = document.querySelector(${selectorLiteral("settings-panel")}) ||
+        document.querySelector(${selectorLiteral("appearance-radio")}) ||
         document.querySelector(${stableTestidLiteral("theme-preview")});
-      return Boolean((shell && sidebar) || settings || main);
+      const genericMain = document.querySelector('main, [role="main"]');
+      const genericInput = document.querySelector('textarea, [contenteditable="true"], [role="textbox"]');
+      const branded = Boolean(document.querySelector(
+        ${stableTestidLiteral("app-shell-header-context-menu-surface")},
+      ));
+      return Boolean((shell && sidebar) || settings || main ||
+        (genericMain && genericInput && branded));
     };
     const install = () => {
       if (window[generationKey] !== generation) { stop(); return true; }
