@@ -1392,11 +1392,20 @@ html[data-dream-skin="active"]
   left: 13px;
   top: 6px;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-left: var(--dream-skin-project-icon-indent, 0px);
   color: var(--ds-muted);
   font-size: 12px;
   font-weight: 720;
   letter-spacing: 0;
+  line-height: 24px;
   white-space: nowrap;
+  background-image: var(--dream-skin-project-icon, none);
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
 }
 
 html[data-dream-skin="active"] __DREAM_SELECTOR_HOME_ROUTE__ __DREAM_SELECTOR_PROJECT_SELECTOR__ > button {

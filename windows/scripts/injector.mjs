@@ -42,6 +42,9 @@ const stableTestidLiteral = (testid) => {
 const SKIN_VERSION = "1.5.12";
 const MAX_ART_BYTES = 10 * 1024 * 1024;
 const MAX_SAFE_CSS_BYTES = 256 * 1024;
+const MAX_PROJECT_ICON_BYTES = 128 * 1024;
+const MAX_PROJECT_ICON_DATA_URL_LENGTH = 180_000;
+const PROJECT_ICON_DATA_URL_PATTERN = /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/u;
 const STRONG_THEME_AUDIT_MS = 30000;
 const MIN_RENDERER_VIEWPORT_WIDTH = 320;
 const MIN_RENDERER_VIEWPORT_HEIGHT = 240;
@@ -466,6 +469,31 @@ function normalizedChoice(value, name, choices, fallback) {
   return value;
 }
 
+function normalizedProjectIconDataUrl(value, name = "projectIconDataUrl") {
+  if (value === undefined || value === null || value === "") return null;
+  if (
+    typeof value !== "string"
+    || value.length > MAX_PROJECT_ICON_DATA_URL_LENGTH
+    || !PROJECT_ICON_DATA_URL_PATTERN.test(value)
+  ) {
+    throw new Error(`${name} must be a short PNG data URL`);
+  }
+  const encoded = value.slice("data:image/png;base64,".length);
+  if (encoded.length % 4 !== 0) throw new Error(`${name} must use padded base64`);
+  const bytes = Buffer.from(encoded, "base64");
+  const metadata = readImageMetadata(bytes, ".png");
+  if (
+    bytes.length < 1
+    || bytes.length > MAX_PROJECT_ICON_BYTES
+    || !metadata
+    || metadata.width > 512
+    || metadata.height > 512
+  ) {
+    throw new Error(`${name} must be a valid PNG no larger than 512px per side`);
+  }
+  return value;
+}
+
 function normalizedText(value, name, fallback, maxLength = 120) {
   if (value === null || value === undefined || value === "") return fallback;
   if (typeof value !== "string" || value.length > maxLength || /[\u0000-\u001f]/.test(value)) {
@@ -574,6 +602,8 @@ export async function loadTheme(themeDir) {
     explicitColorKeys: rawColors ? colorKeys.filter((key) => Object.hasOwn(rawColors, key)) : [],
     colors,
   };
+  const projectIconDataUrl = normalizedProjectIconDataUrl(raw.projectIconDataUrl);
+  if (projectIconDataUrl) theme.projectIconDataUrl = projectIconDataUrl;
   const [themeStat, imageStat, safeCss] = await Promise.all([
     fs.stat(themePath),
     fs.stat(realImagePath),
