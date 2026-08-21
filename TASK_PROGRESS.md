@@ -2,13 +2,14 @@
 
 ## 泽音 Melody 同步 Codex Dream Skin v1.5.14（2026-08-21）
 
-- [进行中] 从 `codex/zeyin-melody-theme@9c5a47d` 创建 `codex/zeyin-melody-v1.5.14`，同步源锁定为官方标签 `v1.5.14@95423d849f74b9824db2ba0c1121cc7a13b56d10`。
+- [已完成] 从 `codex/zeyin-melody-theme@9c5a47d` 创建 `codex/zeyin-melody-v1.5.14`，同步源锁定为官方标签 `v1.5.14@95423d849f74b9824db2ba0c1121cc7a13b56d10`。
 - [已完成] 合并官方 v1.5.14 运行时、Windows 冷启动/回滚修复、macOS 菜单栏与语言支持、版本一致性和新增回归测试；保留泽音 Melody v7 主题包、文案、项目图标和 renderer 定制钩子。
 - [已完成] 双端 injector 采用 v1.5.14 的版本常量、可见性校验和 payload 合同，同时保留 `projectIconDataUrl`、主题文案字段及 `[data-ds-part="composer"]` 语义桥接。
 - [已完成] `sync-runtime-assets.mjs --check`、selector doctor、tools/Portable Node、双端 injector payload、JavaScript 语法、`git diff --check` 和六处 `1.5.14` 版本一致性检查通过；Windows Node 测试 27/27 通过。
 - [已完成] Windows PowerShell 5.1 与 7 回归套件均通过，安装器静态检查通过；两个 Melody 主题包均通过 schema、图片元数据、项目图标与 Safe CSS 校验。
 - [已完成] macOS Portable Node 在 Windows 主机上可执行部分为 70 项通过、2 项按环境跳过；3 项仅受主机限制（macOS `fsync`/符号链接/`/bin/bash`），macOS 原生/Swift/DMG 验证交由 fork 内 PR 的 CI 完成。
-- [待完成] 生成中文合并提交，推送 fork 分支并创建 fork 内 PR；不推送官方源仓库、不创建重复 Release/tag。
+- [已完成] 生成中文 v1.5.14 合并提交 `b93f823763426c2f6e949e33a8e90c4448100a94`，以 `8d70a753c6b4c19ac859dfcd76ee7bf8e20ea1a3` 对齐 fork `main` 历史，推送 `codex/zeyin-melody-v1.5.14` 并创建 PR #2；不推送官方源仓库、不创建重复 Release/tag。
+- [已完成] fork PR #2 的 Static checks、Windows PowerShell 5.1/7、macOS 回归、Swift 菜单栏与 universal DMG CI 全部通过（workflow run `32447485804`）。
 
 ## 首页引用文字右侧跨压与层级修复（2026-08-11）
 
