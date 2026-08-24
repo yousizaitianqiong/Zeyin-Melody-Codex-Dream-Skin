@@ -1,5 +1,16 @@
 # Task Progress
 
+## 泽音 Melody 同步 Codex Dream Skin v1.5.14（2026-08-21）
+
+- [已完成] 从 `codex/zeyin-melody-theme@9c5a47d` 创建 `codex/zeyin-melody-v1.5.14`，同步源锁定为官方标签 `v1.5.14@95423d849f74b9824db2ba0c1121cc7a13b56d10`。
+- [已完成] 合并官方 v1.5.14 运行时、Windows 冷启动/回滚修复、macOS 菜单栏与语言支持、版本一致性和新增回归测试；保留泽音 Melody v7 主题包、文案、项目图标和 renderer 定制钩子。
+- [已完成] 双端 injector 采用 v1.5.14 的版本常量、可见性校验和 payload 合同，同时保留 `projectIconDataUrl`、主题文案字段及 `[data-ds-part="composer"]` 语义桥接。
+- [已完成] `sync-runtime-assets.mjs --check`、selector doctor、tools/Portable Node、双端 injector payload、JavaScript 语法、`git diff --check` 和六处 `1.5.14` 版本一致性检查通过；Windows Node 测试 27/27 通过。
+- [已完成] Windows PowerShell 5.1 与 7 回归套件均通过，安装器静态检查通过；两个 Melody 主题包均通过 schema、图片元数据、项目图标与 Safe CSS 校验。
+- [已完成] macOS Portable Node 在 Windows 主机上可执行部分为 70 项通过、2 项按环境跳过；3 项仅受主机限制（macOS `fsync`/符号链接/`/bin/bash`），macOS 原生/Swift/DMG 验证交由 fork 内 PR 的 CI 完成。
+- [已完成] 生成中文 v1.5.14 合并提交 `b93f823763426c2f6e949e33a8e90c4448100a94`，以 `8d70a753c6b4c19ac859dfcd76ee7bf8e20ea1a3` 对齐 fork `main` 历史，推送 `codex/zeyin-melody-v1.5.14` 并创建 PR #2；不推送官方源仓库、不创建重复 Release/tag。
+- [已完成] fork PR #2 的 Static checks、Windows PowerShell 5.1/7、macOS 回归、Swift 菜单栏与 universal DMG CI 全部通过（workflow run `32447485804`）。
+
 ## 首页引用文字右侧跨压与层级修复（2026-08-11）
 
 - [完成] Codex 26.803+ 首页 composer 根节点使用 `isolation: isolate`，原生直接子层固定为 `z-index: 1`，引用文字保持 `z-index: 3`；进入输入表面的字形不再被 composer 表面覆盖，原生 overflow 未被运行时规则改写。
@@ -50,6 +61,234 @@
 - [完成] 使用项目安装器内部同一套原子运行时替换逻辑把受管 engine 更新到 `1.5.11`；源树与安装引擎 24 个文件逐一哈希一致，staging/backup 临时目录均为 0。
 - [验证] 升级后活动主题、已保存主题、图片、`.codex\config.toml` 和状态文件与升级前基线的 52 项受保护文件逐一一致；Windows 回退事务套件通过。
 - [受当前会话限制] 当前 Codex 进程没有监听 9335 回环 CDP 端点，验证器按 fail-closed 返回；下次正常重启 Codex 后需再运行 `verify-dream-skin.ps1` 完成 renderer 实机验收，当前未强制关闭会话。
+## Issue #352 fix and v1.5.14 release (2026-08-12)
+
+- [fix merged] PR #360 (`e3787857953998a1916c39b10942ac6c15978a25`) passed exact-head CI run `31558654733`: Static, macOS repository regressions plus universal DMG, Windows PowerShell 7, and Windows PowerShell 5.1 plus Setup.exe. It was squash-merged with the authorized same-owner review bypass at `2026-08-12T03:06:37Z` as `main@69a5a2e4b68174b1c0c70a2fa62adf1aca1eff2a`.
+- [release branch] This isolated worktree is `codex/release-v1.5.14` from that exact merge commit. Only the six version sources, two version-bound macOS assertions, both platform changelogs, and this durable progress record are in scope. All six version sources equal `1.5.14`.
+- [local gate] Portable Node regressions pass 103/103; runtime asset sync, macOS/Windows payload checks, Node/Bash syntax, version consistency, and `git diff --check` pass. `CODEX_DREAM_SKIN_SKIP_DOCTOR=1 bash macos/tests/run-tests.sh` passes with only the documented full-Xcode XCTest and installed signed Codex Doctor branches skipped.
+- [next] Commit and push the version branch, open a Ready PR, require exact-head CI, merge it, then verify the sole Release workflow creates `v1.5.14` from the exact main merge and publishes non-empty DMG, Setup.exe, and `SHA256SUMS.txt`. Only after public asset/checksum verification will #352 receive the customer reply; keep it open pending field confirmation.
+
+## Issue #352 Windows one-click cold-session baseline (2026-08-12)
+
+- [root cause] The reporter's exact `One-click apply requires an existing
+  verified Dream Skin session.` failure is the cold-session guard introduced
+  by PR #245 (`c44b434`, merged as `71f30f0`), not PR #357. The guard conflicts
+  with the documented one-click start/restart path by rejecting before that
+  path can run. Upstream Issue #235 remains a separate limitation: current
+  Store Codex may still fail to expose a verified CDP endpoint after startup.
+- [local implementation] Isolated worktree
+  `/private/tmp/dreamskin-issue352-baseline`, branch
+  `codex/fix-352-one-click-baseline`, starts from exact public v1.5.13
+  `main@6ae42e645c15f6ac91f5fa54a9c37dbc57af646c`. The Windows community apply
+  path now classifies only a missing session as bootstrap-eligible, releases
+  the operation lock while invoking the existing start-and-verify child, then
+  reacquires the lock and revalidates the complete old-theme baseline and its
+  fingerprint. All other baseline failures remain fail-closed.
+- [safety/order] User confirmation still precedes startup. Old-theme baseline
+  establishment and visible verification precede temporary work-root creation,
+  ZIP download, import, snapshot, or active-theme write. The transaction keeps
+  its second baseline check to reject a concurrent pause/theme/session change.
+  A baseline failure therefore performs zero candidate download/import/write,
+  and no longer claims that nonexistent download files were cleaned up.
+- [tests] Before the final orchestration assertion, focused PowerShell suites passed for community apply, both appearance
+  recovery paths, renderer readiness, verified-skin preservation, config
+  rollback, and the structured start-result contract. All 11 Windows scripts
+  parse; Windows Node tests pass 27/27, tools Node tests 2/2, and the focused
+  macOS ZIP validator passes. The final portable Node set passes 103/103,
+  runtime asset sync, dual payload checks, Node syntax, and `git diff --check`
+  pass. The portable macOS set previously passed 73/74 in one
+  parallel run with only a host subprocess exit 141, and that exact ZIP case
+  passed alone. Full Windows wrapper and one ZIP guard remain native-Windows CI
+  gates because macOS lacks `Get-AuthenticodeSignature` and resolves `/var`
+  through a symlink. This shell no longer has `pwsh` installed, so the final
+  test-only orchestration ordering assertion has not been executed locally and
+  remains an explicit exact-head Windows CI gate.
+- [independent review] Final read-only review found no P0/P1. It confirmed
+  lock release before child startup, bounded lock reacquisition, exact
+  fingerprint revalidation, download-before-baseline prevention, accurate
+  cleanup messaging, and PowerShell 5.1-compatible syntax. Residual evidence
+  required before merge is exact-head Windows PowerShell 5.1/7 CI plus Setup.
+- [current truth] Six implementation/test/documentation/progress files are modified and
+  uncommitted. No push, PR, merge, version bump, tag, Release, or Issue reply
+  exists for this fix yet. Next: rerun the corrected focused/static gates,
+  review the final diff, commit/push, open a Ready PR, and require all four
+  exact-head CI jobs before merge. Then prepare v1.5.14 through the sole Release
+  workflow, verify tag/assets/checksums/public status, and reply to #352 without
+  closing it until the reporter confirms the field fix.
+
+## Issue #354 Windows failed-start appearance recovery (2026-08-12)
+
+- [current local implementation] All prior independent-audit findings are
+  addressed. Startup appearance uses a strict, 64 KiB durable
+  `preparing -> committed` journal before marker/config writes. Recovery is
+  three-way per managed key and marker, preserves a newer post-crash user
+  `system -> light` edit, rejects a journal whose declared changes do not match
+  its snapshots without mutating config/marker/evidence, and normalizes CRLF
+  snapshot line endings before serialization. One-click child completion gets
+  lock timeout plus 300000 ms independent grace, never force-kills a live child,
+  and keeps candidate files coherent for timeout/invalid/blocked/
+  `preserved-rendered` states. A rendered-but-unverified result-token child
+  closes its exact new CDP session and restores appearance before returning
+  `restored`.
+- [focused verification 2026-08-12] Seven PowerShell 7.6.4 suites pass together:
+  `config-startup-rollback`, `start-result-contract`, CDP-failure recovery,
+  post-launch recovery, renderer readiness, verified-skin preservation, and
+  `community-theme-link`. Executable coverage includes marker/config hard-stop
+  windows, tampered journals, CRLF quoted keys and dollar-bearing values,
+  post-crash user edits, 480000 ms parent wait, no force-kill/result cleanup
+  while the child remains live, preserved-rendered file coherence, and the full
+  outer child catch/writer/reader category path.
+- [complete local gate 2026-08-12] Portable Node passes 103/103 (macOS 74,
+  Windows 27, tools 2). All 23 PowerShell files parse and satisfy the PS5.1
+  non-ASCII UTF-8 BOM policy; all Node and Bash syntax checks, both platform
+  payload checks, runtime asset sync, and `git diff --check` pass. The full
+  `CODEX_DREAM_SKIN_SKIP_DOCTOR=1 bash macos/tests/run-tests.sh` wrapper exits
+  0, including signed-runtime switch and runtime-state integration. Native
+  SwiftPM/XCTest is skipped because this host lacks a matching full Xcode
+  platform, and Doctor is explicitly skipped because no installed signed Codex
+  app is available. Native Windows PowerShell 5.1/7 and Setup remain CI gates.
+- [independent final audit] Read-only review of the complete local diff found no
+  remaining P0/P1. The prior parent hard-kill and `preserved-rendered` mixed-state
+  blockers are closed by executable production-helper/result-path coverage.
+  Non-blocking P2 residuals are documented: same-user coherent rewriting of the
+  entire local journal is outside corruption detection; the explicitly invoked
+  test/debug-only `-ForegroundInjector` mode has a narrow pre-injector committed
+  window and no production caller; and a concurrent manual action choosing
+  byte-identical theme content is indistinguishable from no superseding change.
+- [remote state] PR #351 is squash-merged as
+  `main@9e6798700c0e35be0713135ebd9b3a6f01583499`; exact-head run
+  `31522162828` and post-merge run `31523222468` passed all four client CI
+  jobs. Draft PR #357 targets that `main` from
+  `codex/fix-354-appearance-rollback@fa3e53822a4158d56dc1ae10efa8f288b2d73a88`.
+  Exact-head run `31531028135` passed Static, macOS/DMG, Windows PowerShell 7,
+  and Windows PowerShell 5.1/Setup.
+- [pushed checkpoint] The 15 implementation, test, and Windows documentation
+  files are committed as `54933c3678034333a4e00c0a93c9d4da5d2ded6d`; the
+  first verification checkpoint is `8ad35f2`. Both were pushed to
+  `codex/fix-354-appearance-rollback` for Draft PR #357. Run `31531028135`
+  remains historical evidence for older head `fa3e538`, not the new changes.
+- [scope] The PR fixes only caught Windows failed-start partial appearance,
+  rollback ownership/concurrency, and bounded one-click diagnostics. It does
+  not claim that official Store Codex `26.803.5235.0` restored a supported CDP
+  endpoint. User authorization covers scoped commit, push, PR merge, and issue
+  handling, but not a version, tag, Release, deployment, or external config.
+- [remaining] Push this progress-only checkpoint and update the PR body. Require
+  all four CI jobs green on the resulting exact head before marking #357 Ready
+  and squash-merging with head protection. Verify post-merge `main` CI, then
+  update only #235, #352, and #354. Native Windows 5.1/7 and Setup are CI-only
+  evidence on this macOS host.
+
+## Client release v1.5.12 (2026-08-08)
+
+- [scope] Reviewed and merged 10 pending community/self PRs that had accumulated
+  unmerged on `main` since late July (#68, #212, #283, #284, #285, #286, #288,
+  #289, #106, #342) — each individually verified against current `main` before
+  merge: git-mergeable both alone and stacked together, no version-fragile
+  selector/DOM assumptions, and (for #283 specifically) the Safe CSS sandbox
+  in `runtime/safe-css-policy.json` was cross-checked to confirm no community
+  theme can trip the stricter visibility check (opacity floored at 0.65,
+  display/visibility/position not themable at all).
+- [diagnosed] Merging #68 exposed that `macos/scripts/image-metadata.mjs` is
+  generated from `runtime/image-metadata.mjs` via `tools/sync-runtime-assets.mjs`;
+  #68 edited the generated output directly instead of the source, so
+  `--check` failed on `main` and `windows/scripts/image-metadata.mjs` never
+  picked up the new `readRawDimensions` export at all. Fixed at the source
+  and regenerated both platform outputs (#347).
+- [diagnosed] `Static checks` CI was independently red on `main` — 3 tests in
+  `macos/tests/renderer-verification.test.mjs` failed against `main` HEAD
+  directly, unrelated to any merge here. Root cause: the test's hand-rolled
+  DOM mock had drifted from the real runtime contract in three ways (stale
+  `shell-main` selector literal predating the 26.727 `:is(...)` update,
+  missing `scope.missingL1` that `assessRendererVerification` requires,
+  hardcoded `version: "1.5.6"` against the real `SKIN_VERSION` of `"1.5.11"`).
+  Fixed the fixtures and exported `SKIN_VERSION` so the test imports the real
+  constant instead of re-hardcoding a value that drifts on every release (#349).
+- [implemented] Regrouped the menu bar's ~16 flat top-level items into
+  `主题`/`链接`/`维护` submenus, and replaced the always-present manual
+  "检查更新…" item with a background check (24h timer + one-shot ~15s after
+  launch) that posts a system notification the first time a new version is
+  seen and shows a conditional "🆕 发现新版本" item only while one is
+  available; manual check moved into 维护 as "立即检查更新" (#348). Could not
+  run `swift build`/`swift test` locally — this sandbox's Command Line Tools
+  (Swift 5.10) don't match the macOS 15.2 SDK (needs 6.0.3) — so an
+  independent review agent read the full diff for compile-breaking issues
+  before push, and the PR was only merged after real CI's `macos-latest` job
+  (`swift test --package-path macos/menubar-app` + DMG build) came back
+  green. The review agent's two substantive findings (install doc no longer
+  matched the new background-polling behavior; a manual check during an
+  in-flight background check could double-spawn `check-update-macos.sh`)
+  were fixed before merge with a dedicated `updateCheckInFlight` guard
+  separate from the broader `operationInFlight` busy state, so the 24h timer
+  no longer disables the primary apply/open actions while it runs.
+- [verified] Before cutting the version: `node --test macos/tests/*.test.mjs
+  windows/tests/*.test.mjs tools/*.test.mjs` (93/93 pass), full
+  `macos/tests/run-tests.sh` including signed-runtime and Doctor checks, and
+  both `injector.mjs --check-payload` invocations all pass on `main` post-merge.
+- [implemented] Version bump touches all six release version sources
+  (`macos/VERSION`, `windows/VERSION`, `macos/package.json`,
+  `macos/scripts/common-macos.sh`, both platforms' `injector.mjs`
+  `SKIN_VERSION`) plus the two hardcoded `1.5.11` assertions in
+  `macos/tests/run-tests.sh` (the update-check JSON fixture and the
+  `common-macos.sh`-sourced `$SKIN_VERSION` check). A grep-only pass across
+  the repo for the literal `1.5.11` first missed a third real dependency:
+  `windows/tests/injector-window-readiness.test.mjs` imports `verifySession`
+  (not `assessRendererVerification` directly), so its mock
+  `__CODEX_DREAM_SKIN_STATE__.version` is transitively checked against the
+  real `SKIN_VERSION` even though the test file never names that identifier.
+  The full portable test run after the version bump caught this immediately
+  (4 failures) before it reached CI; fixed the same way as the macOS
+  `renderer-verification.test.mjs` case — export `SKIN_VERSION` from
+  `windows/scripts/injector.mjs` (as a separate `export { }` statement, same
+  reason as macOS) and import it into the test instead of re-hardcoding.
+  `windows/tests/start-verified-skin-preserved.tests.ps1`'s literal
+  `"version":"1.5.11"` is a fully mocked PowerShell fixture with no path to
+  `SKIN_VERSION` at all (grepped every `.ps1` script; it's JS-only), so that
+  one is genuinely safe to leave unchanged.
+- [gap] Live click-through of the reorganized macOS menu bar and a real
+  "update available" notification have not been manually exercised on a
+  physical Mac — verification here is CI (`swift test`) plus static review,
+  not an interactive smoke test.
+
+## macOS menu reapply/open ChatGPT restart fix (2026-08-05)
+
+- [scope] Branch `codex/fix-macos-reapply-open-chatgpt` was created from latest
+  `upstream/main` (`0a727a5`). Fix the macOS menu behavior where the first
+  "重新应用皮肤" click can restart ChatGPT even though the prompt says no restart,
+  and review its interaction with the separate "打开 ChatGPT" action.
+- [diagnosed] The menu title is derived from lightweight `session=active`
+  status, while `apply-from-menubar-macos.sh` always calls
+  `start-dream-skin-macos.sh --restart-existing`. If ChatGPT is running without
+  a verified CDP endpoint, `start-dream-skin-macos.sh` stops and relaunches it.
+- [implemented] `apply-from-menubar-macos.sh` keeps the original
+  `CHEAP_RUNNING` / `SESSION` prompt flow and now attempts `hot_reapply_theme`
+  after the existing confirmation but before falling back to
+  `start-dream-skin-macos.sh --restart-existing`. A successful hot reapply
+  exits without restarting ChatGPT.
+- [corrected] The native menu keeps the original "打开 ChatGPT" operation title
+  and always shows that action. Its implementation preserves the original
+  "未找到 ChatGPT" and "无法打开 ChatGPT" error surfaces, but replaces the
+  successful native `NSWorkspace.openApplication` launch with the Dream Skin
+  start path only when the installed engine is complete. If the engine is
+  missing or incomplete, the action falls back to native `NSWorkspace` opening
+  and does not install the engine implicitly.
+- [covered] Added static regressions to lock menu apply hot-reload ordering,
+  the preserved session-driven prompt model, the unchanged "打开 ChatGPT" title,
+  the Dream Skin-backed open action, and the native fallback when the engine is
+  not installed. The macOS test Gatekeeper scan now ignores the same
+  `.build-*` SwiftPM artifacts already listed in `macos/menubar-app/.gitignore`.
+- [verified 2026-08-06] `bash -n
+  macos/scripts/apply-from-menubar-macos.sh macos/tests/run-tests.sh`,
+  `git diff --check`, `swift build --package-path macos/menubar-app --product
+  CodexDreamSkinMenuBar`, and `CODEX_DREAM_SKIN_SKIP_DOCTOR=1 bash
+  macos/tests/run-tests.sh` all pass. The wrapper skipped Doctor as requested
+  by the environment flag.
+- [gap] Live restore / re-apply / open ChatGPT smoke has not been rerun after
+  narrowing the implementation back to the minimal AppDelegate + hot-reapply
+  path.
+- [gap] Direct `swift test --package-path macos/menubar-app` fails on this host
+  because the installed Swift toolchain cannot import `XCTest`; the repository
+  macOS test wrapper detects the missing full matching Xcode platform and skips
+  native XCTest accordingly.
 
 ## Client release v1.5.11 — preparing (2026-08-01)
 

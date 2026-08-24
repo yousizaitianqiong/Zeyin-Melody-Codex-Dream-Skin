@@ -78,22 +78,27 @@ updates, and uninstall steps.
   with recent/popular sorting and creator rankings. Every theme can be tried on
   in an in-page desktop simulator before you install it.
 
-<p align="center">
-  <a href="https://dreamskin.cc/gallery">
-    <img src="docs/images/site-tryon-en.webp" alt="Trying on the community theme 晨雾山水 in the DreamSkin.cc desktop simulator" width="900">
-  </a><br>
-  <sub>Trying on the community theme 晨雾山水 · switch home/task page, wide/compact window, and sidebar on the spot, then apply in one click or download the pack</sub>
-</p>
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="docs/images/悟空.png" alt="Community theme 悟空（WUKONG） rendered live on desktop" width="420"><br>
+      <sub>悟空（WUKONG） by JamesOpsLab</sub>
+    </td>
+    <td align="center">
+      <img src="docs/images/DeepSeek-鲸鱼娘.png" alt="Community theme DeepSeek-鲸鱼娘 rendered live on desktop" width="420"><br>
+      <sub>DeepSeek-鲸鱼娘 by powerdog996</sub>
+    </td>
+  </tr>
+</table>
 
 - [**Online Studio**](https://dreamskin.cc/studio) — swap the background, tune
   theme colors, and write Safe CSS in the browser, then export a `.zip` pack or
   submit it to the library (sign-in required; published after human review).
 
 <p align="center">
-  <a href="https://dreamskin.cc/studio">
-    <img src="docs/images/site-studio-en.webp" alt="Editing the community theme 月下松岚 in the DreamSkin.cc online Studio" width="900">
-  </a><br>
-  <sub>Online Studio · live preview on the left, background artwork, appearance/focal point, and palette on the right; any library theme loads straight in to keep editing</sub>
+  <img src="docs/images/studio-custom-look.png" alt="A custom background tuned in the DreamSkin.cc online Studio" width="900">
+  <br>
+  <sub>Online Studio · swap in a background you like, dial in the focal point and palette — now it's your theme</sub>
 </p>
 
 The macOS menu bar and Windows tray both link straight to **Gallery** and
@@ -261,9 +266,11 @@ More detail:
 
 ## Safety
 
-- CDP binds `127.0.0.1` only — avoid untrusted local processes while the theme runs.
+- CDP binds `127.0.0.1` only, but it has **no authentication**; another process on the same computer may still connect and inspect or control the renderer.
+- Pausing the theme or stopping only the injector does not close the debug port of an already running Codex process. Use a full Restore/restart, or quit every Codex process and reopen the official app normally, to end the exposure window.
 - Does not touch the official install directory or code signature.
 - **Never** rewrites API Key / Base URL; relay and theme stay separate.
+- See [`SECURITY.md`](./SECURITY.md) for the complete threat model and operating guidance.
 
 ## License
 

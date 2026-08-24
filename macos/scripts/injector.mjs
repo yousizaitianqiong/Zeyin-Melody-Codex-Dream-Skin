@@ -43,7 +43,11 @@ const stableTestidLiteral = (testid) => {
   }
   return JSON.stringify(`[data-testid="${testid}"]`);
 };
-const SKIN_VERSION = "1.5.12";
+const SKIN_VERSION = "1.5.14";
+// .github/workflows/ci.yml's version-consistency check greps this file for a
+// literal `const SKIN_VERSION = "...";` line, so the export stays a separate
+// statement rather than an inline `export const`.
+export { SKIN_VERSION };
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 10 * 1024 * 1024;
@@ -1121,16 +1125,31 @@ export async function inspectNativeWindow(session) {
   }
 }
 
-async function verifySession(session, expectedThemeId = null, expectedRevision = null) {
+export async function verifySession(session, expectedThemeId = null, expectedRevision = null) {
   const renderer = await session.evaluate(`(() => {
     const box = (node) => {
       if (!node) return null;
       const r = node.getBoundingClientRect();
       const style = getComputedStyle(node);
+      const opacity = Number.parseFloat(style.opacity);
+      const right = Number.isFinite(r.right) ? r.right : r.x + r.width;
+      const bottom = Number.isFinite(r.bottom) ? r.bottom : r.y + r.height;
+      let cssVisible = r.width > 0 && r.height > 0 && style.display !== 'none' &&
+        style.visibility !== 'hidden' && style.visibility !== 'collapse' &&
+        style.contentVisibility !== 'hidden' && (!Number.isFinite(opacity) || opacity > 0);
+      try {
+        if (typeof node.checkVisibility === 'function') {
+          cssVisible = cssVisible && node.checkVisibility({
+            checkOpacity: true,
+            checkVisibilityCSS: true,
+          });
+        }
+      } catch {}
+      const intersectsViewport = right > 0 && bottom > 0 && r.x < innerWidth && r.y < innerHeight;
       return {
         x: Math.round(r.x), y: Math.round(r.y),
         width: Math.round(r.width), height: Math.round(r.height),
-        visible: r.width > 0 && r.height > 0 && style.display !== 'none' && style.visibility !== 'hidden',
+        visible: Boolean(node.isConnected !== false && cssVisible && intersectsViewport),
       };
     };
     const homeIndicator = document.querySelector(${selectorLiteral("home-icon")});
@@ -1238,14 +1257,31 @@ async function verifySession(session, expectedThemeId = null, expectedRevision =
   });
 }
 
-async function waitForVerifiedSession(session, timeoutMs, expectedThemeId = null, expectedRevision = null) {
+export async function waitForVerifiedSession(
+  session,
+  timeoutMs,
+  expectedThemeId = null,
+  expectedRevision = null,
+  retryDelayMs = 500,
+) {
   const deadline = Date.now() + timeoutMs;
+  const retryDelay = Number.isFinite(retryDelayMs) && retryDelayMs >= 0 ? retryDelayMs : 500;
   let lastResult;
+  let lastError;
   while (Date.now() < deadline) {
-    lastResult = await verifySession(session, expectedThemeId, expectedRevision);
-    if (lastResult.pass) return lastResult;
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      lastResult = await verifySession(session, expectedThemeId, expectedRevision);
+      lastError = null;
+      if (lastResult.pass) return lastResult;
+    } catch (error) {
+      // Renderer navigations can invalidate Runtime.evaluate while Codex is
+      // swapping documents. Treat that as a transient sample until the same
+      // bounded verification deadline expires, matching the Windows injector.
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, retryDelay));
   }
+  if (!lastResult && lastError) throw lastError;
   return lastResult;
 }
 
